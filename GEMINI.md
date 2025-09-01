@@ -27,6 +27,7 @@
     - **Commit 流程**:
         - 在完成一個功能或一個階段性任務後，都應建立一個清晰的 commit。
         - Commit message 應遵循 [Conventional Commits](https://www.conventionalcommits.org/) 規範 (例如 `feat(api): ...`, `fix(tests): ...`)，以保持歷史紀錄的可讀性。
+        - 完成 commit 後，應將 `develop` 分支推送到遠端儲存庫 (git push origin develop)。
 - **部署**: AWS (EC2 + RDS)
 
 ## 3. 開發方法論：測試驅動開發 (TDD)
