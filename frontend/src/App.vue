@@ -1,47 +1,59 @@
-<script setup>
-import HelloWorld from './components/HelloWorld.vue'
-import TheWelcome from './components/TheWelcome.vue'
-</script>
-
 <template>
-  <header>
-    <img alt="Vue logo" class="logo" src="./assets/logo.svg" width="125" height="125" />
-
-    <div class="wrapper">
-      <HelloWorld msg="You did it!" />
+  <div id="app">
+    <div v-if="!isLoggedIn" class="container">
+      <div class="column">
+        <Register @registered="handleRegistration" />
+      </div>
+      <div class="column">
+        <Login @loggedIn="handleLogin" />
+      </div>
     </div>
-  </header>
-
-  <main>
-    <TheWelcome />
-  </main>
+    <div v-else>
+      <button @click="handleLogout">Logout</button>
+      <DoctorList />
+    </div>
+  </div>
 </template>
 
-<style scoped>
-header {
-  line-height: 1.5;
+<script setup>
+import { ref } from 'vue';
+import Register from './components/Register.vue';
+import Login from './components/Login.vue';
+import DoctorList from './components/DoctorList.vue';
+
+const isLoggedIn = ref(!!localStorage.getItem('token'));
+
+const handleRegistration = () => {
+  // For now, just show an alert. In a real app, you might want to automatically log the user in.
+  alert('Registration successful! Please log in.');
+};
+
+const handleLogin = () => {
+  isLoggedIn.value = true;
+};
+
+const handleLogout = () => {
+  localStorage.removeItem('token');
+  isLoggedIn.value = false;
+};
+</script>
+
+<style>
+#app {
+  font-family: Avenir, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-align: center;
+  color: #2c3e50;
+  margin-top: 60px;
 }
 
-.logo {
-  display: block;
-  margin: 0 auto 2rem;
+.container {
+  display: flex;
+  justify-content: space-around;
 }
 
-@media (min-width: 1024px) {
-  header {
-    display: flex;
-    place-items: center;
-    padding-right: calc(var(--section-gap) / 2);
-  }
-
-  .logo {
-    margin: 0 2rem 0 0;
-  }
-
-  header .wrapper {
-    display: flex;
-    place-items: flex-start;
-    flex-wrap: wrap;
-  }
+.column {
+  width: 45%;
 }
 </style>

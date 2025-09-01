@@ -8,15 +8,15 @@ class PatientSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Patient
-        # Note: AbstractUser has first_name, last_name. We are using 'username' as a proxy for name for now.
-        fields = ('id', 'username', 'email', 'password', 'phone', 'birthday')
+        # Note: AbstractUser has first_name, last_name. We are using 'name' as a proxy for name for now.
+        fields = ('id', 'name', 'email', 'password', 'phone', 'birthday')
 
     def create(self, validated_data):
         """
         Use Django's `create_user` method to handle password hashing.
         """
         user = Patient.objects.create_user(
-            username=validated_data['username'],
+            name=validated_data['name'],
             email=validated_data['email'],
             password=validated_data['password'],
             phone=validated_data.get('phone'),

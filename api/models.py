@@ -11,7 +11,7 @@ class Patient(AbstractUser):
     # We want to log in with email, so we set the USERNAME_FIELD to 'email'.
     # We also need to specify that the username field is not required anymore.
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['username'] # Still need username for createsuperuser, can be same as email
+    REQUIRED_FIELDS = []
 
     def __str__(self):
         return self.email
