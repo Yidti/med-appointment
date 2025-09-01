@@ -2,10 +2,7 @@ from rest_framework.test import APITestCase
 from rest_framework import status
 from django.urls import reverse
 from .models import Patient
-from django.contrib.auth import get_user_model
 from rest_framework.authtoken.models import Token
-
-User = get_user_model()
 
 class RegistrationAPITest(APITestCase):
     def test_patient_can_register(self):
@@ -24,14 +21,14 @@ class RegistrationAPITest(APITestCase):
         response = self.client.post(url, data, format='json')
         
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(User.objects.count(), 1)
-        self.assertEqual(User.objects.get().email, 'test.patient@example.com')
+        self.assertEqual(Patient.objects.count(), 1)
+        self.assertEqual(Patient.objects.get().email, 'test.patient@example.com')
 
 class LoginAPITest(APITestCase):
     def setUp(self):
         self.email = "test.patient@example.com"
         self.password = "someStrongPassword123"
-        self.user = User.objects.create_user(
+        self.user = Patient.objects.create_user(
             username="testloginuser", 
             email=self.email, 
             password=self.password
@@ -54,7 +51,7 @@ class LoginAPITest(APITestCase):
 
 class UserProfileAPITest(APITestCase):
     def setUp(self):
-        self.user = User.objects.create_user(username='testprofileuser', email='test.profile@example.com', password='password123')
+        self.user = Patient.objects.create_user(username='testprofileuser', email='test.profile@example.com', password='password123')
         self.token = Token.objects.create(user=self.user)
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token.key)
 

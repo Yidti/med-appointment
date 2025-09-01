@@ -4,6 +4,9 @@ from rest_framework import status
 from .serializers import PatientSerializer, EmailAuthTokenSerializer
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.authtoken.models import Token
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.authentication import TokenAuthentication
+
 
 class PatientRegistrationView(APIView):
     """
@@ -30,3 +33,17 @@ class CustomAuthToken(ObtainAuthToken):
             'user_id': user.pk,
             'email': user.email
         })
+
+class UserProfileView(APIView):
+    """
+    Handles retrieving and updating authenticated user's profile.
+    """
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, format=None):
+        """
+        Return the authenticated user's profile information.
+        """
+        serializer = PatientSerializer(request.user)
+        return Response(serializer.data)
