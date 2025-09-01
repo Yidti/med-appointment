@@ -17,7 +17,16 @@
     - **後端**: PyTest, Django's `TestCase`
     - **前端**: Vitest, Vue Testing Library
 - **API 文件**: drf-yasg (Swagger UI)
-- **版本控制**: Git (Gitflow)
+- **版本控制**: Git (遵循 Gitflow 工作流)
+    - **主要分支**:
+        - `main`: 用於存放穩定、可部署的正式版本。所有對 `main` 的合併都應透過 Pull Request 進行。
+        - `develop`: 主要的開發分支，整合所有已完成的功能。我們目前的工作都應該在這個分支上進行。
+    - **支援分支**:
+        - `feature/<feature-name>`: 開發新功能時，應從 `develop` 分支出來。完成後合併回 `develop`。
+        - `hotfix/<fix-name>`: 修復正式版本的緊急 bug 時，從 `main` 分支出來，完成後同時合併回 `main` 和 `develop`。
+    - **Commit 流程**:
+        - 在完成一個功能或一個階段性任務後，都應建立一個清晰的 commit。
+        - Commit message 應遵循 [Conventional Commits](https://www.conventionalcommits.org/) 規範 (例如 `feat(api): ...`, `fix(tests): ...`)，以保持歷史紀錄的可讀性。
 - **部署**: AWS (EC2 + RDS)
 
 ## 3. 開發方法論：測試驅動開發 (TDD)
