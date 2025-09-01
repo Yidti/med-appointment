@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Patient, Doctor
+from .models import Patient, Doctor, Schedule, Appointment
 from django.contrib.auth import authenticate
 
 class PatientSerializer(serializers.ModelSerializer):
@@ -57,3 +57,25 @@ class DoctorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Doctor
         fields = ('id', 'name', 'specialty', 'department')
+
+
+class ScheduleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Schedule
+        fields = ('id', 'doctor', 'date', 'start_time', 'end_time', 'is_available')
+
+
+class AppointmentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Appointment
+        fields = ('id', 'patient', 'schedule', 'status', 'created_at')
+        read_only_fields = ('patient', 'status', 'created_at')
+
+    def validate_schedule(self, value):
+        """
+        Check if the schedule is available.
+        """
+        if not value.is_available:
+            raise serializers.ValidationError("This schedule is not available.")
+        return value
+
