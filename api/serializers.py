@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Patient
+from .models import Patient, Doctor
 from django.contrib.auth import authenticate
 
 class PatientSerializer(serializers.ModelSerializer):
@@ -51,3 +51,9 @@ class EmailAuthTokenSerializer(serializers.Serializer):
 
         attrs['user'] = user
         return attrs
+
+
+class DoctorSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Doctor
+        fields = ('id', 'name', 'specialty', 'department')

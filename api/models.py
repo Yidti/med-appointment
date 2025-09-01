@@ -17,3 +17,13 @@ class Patient(AbstractUser):
         return self.email
 
 
+class Doctor(models.Model):
+    name = models.CharField(max_length=100)
+    specialty = models.CharField(max_length=100) # e.g., Cardiology, Neurology
+    department = models.CharField(max_length=100) # e.g., Internal Medicine
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Dr. {self.name} - {self.specialty}"
+
+

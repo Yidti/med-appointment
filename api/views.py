@@ -1,12 +1,12 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status
-from .serializers import PatientSerializer, EmailAuthTokenSerializer
+from rest_framework import status, generics
+from .serializers import PatientSerializer, EmailAuthTokenSerializer, DoctorSerializer
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.authtoken.models import Token
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import TokenAuthentication
-
+from .models import Patient, Doctor
 
 class PatientRegistrationView(APIView):
     """
@@ -47,3 +47,30 @@ class UserProfileView(APIView):
         """
         serializer = PatientSerializer(request.user)
         return Response(serializer.data)
+
+    def put(self, request, format=None):
+        """
+        Update the authenticated user's profile.
+        """
+        user = request.user
+        # We pass partial=True to allow partial updates
+        serializer = PatientSerializer(user, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class DoctorListView(generics.ListAPIView):
+    """
+    Provides a list of all doctors.
+    """
+    queryset = Doctor.objects.all()
+    serializer_class = DoctorSerializer
+
+
+class DoctorDetailView(generics.RetrieveAPIView):
+    """
+    Provides details of a single doctor.
+    """
+    queryset = Doctor.objects.all()
+    serializer_class = DoctorSerializer
