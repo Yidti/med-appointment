@@ -4,7 +4,7 @@ from rest_framework import status, generics, serializers
 from .serializers import PatientSerializer, EmailAuthTokenSerializer, DoctorSerializer, ScheduleSerializer, AppointmentSerializer
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.authtoken.models import Token
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.authentication import TokenAuthentication
 from .models import Patient, Doctor, Schedule, Appointment
 
@@ -12,6 +12,9 @@ class PatientRegistrationView(APIView):
     """
     Allows new patients to register.
     """
+    authentication_classes = []
+    permission_classes = [AllowAny]
+
     def post(self, request, format=None):
         serializer = PatientSerializer(data=request.data)
         if serializer.is_valid():

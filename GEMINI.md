@@ -81,6 +81,26 @@
     - 執行測試，直到通過。
 3.  **Refactor**: 檢視 View 和 Serializer 的程式碼，是否有重複或可優化之處。
 
+**執行後端測試**
+
+要執行後端測試，請確保您已啟動 Python 虛擬環境。您可以使用以下指令執行所有測試：
+
+```bash
+pytest
+```
+
+如果您想在不啟動虛擬環境的情況下執行測試，可以直接使用虛擬環境中的 `pytest` 執行檔：
+
+```bash
+./venv/bin/pytest
+```
+
+若要針對特定的 app (例如 `api`) 執行測試，可以指定路徑：
+
+```bash
+./venv/bin/pytest api/
+```
+
 **需開發的 API Endpoints:**
 
 - **使用者/病患**: `POST /api/register/`, `POST /api/login/`, `GET /api/me/`, `PUT /api/me/`

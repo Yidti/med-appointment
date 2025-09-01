@@ -3,22 +3,27 @@ from .models import Patient, Doctor, Schedule, Appointment
 from django.contrib.auth import authenticate
 
 class PatientSerializer(serializers.ModelSerializer):
-    # We are making password write_only so it's not returned in the response.
+    # The frontend sends 'name', and we make it write-only.
+    name = serializers.CharField(write_only=True)
     password = serializers.CharField(write_only=True)
 
     class Meta:
         model = Patient
-        # Note: AbstractUser has first_name, last_name. We are using 'name' as a proxy for name for now.
+        # 'username' is handled internally, not exposed to the client for registration.
         fields = ('id', 'name', 'email', 'password', 'phone', 'birthday')
+        read_only_fields = ('id',)
 
     def create(self, validated_data):
         """
         Use Django's `create_user` method to handle password hashing.
+        We use the email as the username, as specified in the Patient model's USERNAME_FIELD.
+        The 'name' from the frontend is used for 'first_name'.
         """
         user = Patient.objects.create_user(
-            name=validated_data['name'],
+            username=validated_data['email'],  # Use email for the username field
             email=validated_data['email'],
             password=validated_data['password'],
+            first_name=validated_data.get('name', ''),  # Use name for first_name
             phone=validated_data.get('phone'),
             birthday=validated_data.get('birthday')
         )

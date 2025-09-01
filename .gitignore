@@ -137,3 +137,5 @@ cython_debug/
 
 # Temp file
 temp.md
+error-context.md
+registration_error.log
