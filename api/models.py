@@ -1,3 +1,19 @@
+from django.contrib.auth.models import AbstractUser
 from django.db import models
 
-# Create your models here.
+class Patient(AbstractUser):
+    # Django's AbstractUser already has: username, first_name, last_name, email, password, is_staff, is_active, date_joined
+    # We will use email as the primary identifier, so let's make it unique and required.
+    email = models.EmailField(unique=True)
+    phone = models.CharField(max_length=20, blank=True, null=True)
+    birthday = models.DateField(blank=True, null=True)
+
+    # We want to log in with email, so we set the USERNAME_FIELD to 'email'.
+    # We also need to specify that the username field is not required anymore.
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['username'] # Still need username for createsuperuser, can be same as email
+
+    def __str__(self):
+        return self.email
+
+

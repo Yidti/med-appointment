@@ -180,7 +180,7 @@
 
 ---
 
-## 附錄 C: 面試 Demo 流程
+## 附錄 C: Demo 流程
 
 1.  **用 Swagger 打開 API Docs**: 展示所有 Endpoint。
 2.  **註冊 / 登入**: Demo 病患註冊及登入流程，取得 JWT Token。
