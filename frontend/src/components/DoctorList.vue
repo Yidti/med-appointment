@@ -1,30 +1,102 @@
 <template>
-  <div>
-    <h2>Doctors</h2>
-    <ul v-if="doctors.length">
-      <li v-for="doctor in doctors" :key="doctor.id">
-        {{ doctor.name }} - {{ doctor.specialty }}
-      </li>
-    </ul>
-    <p v-else>No doctors available.</p>
-    <p v-if="errorMessage">{{ errorMessage }}</p>
+  <div class="container">
+    <div class="text-center mb-5">
+      <h1 class="display-4">Find Your Doctor</h1>
+      <p class="lead text-muted">Search for a specialist and book your appointment today.</p>
+    </div>
+
+    <!-- Search and Filter Bar -->
+    <div class="row mb-4 justify-content-center">
+      <div class="col-md-8">
+        <div class="input-group input-group-lg">
+          <input type="text" class="form-control" placeholder="Search by name or specialty..." v-model="searchQuery">
+          <button class="btn btn-primary" type="button"><i class="bi bi-search"></i> Search</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Doctor List -->
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+      <div class="col" v-for="doctor in filteredDoctors" :key="doctor.id">
+        <div class="card h-100 shadow-sm border-light-subtle text-center">
+          <div class="card-body">
+            <img :src="`https://i.pravatar.cc/150?img=${doctor.id}`" class="rounded-circle mb-3 shadow-sm" alt="Doctor" width="100" height="100">
+            <h5 class="card-title">{{ doctor.name }}</h5>
+            <h6 class="card-subtitle mb-2 text-primary fw-bold">{{ doctor.specialty }}</h6>
+            <p class="card-text text-muted small">{{ doctor.department }}</p>
+            <router-link :to="`/doctors/${doctor.id}`" class="btn btn-outline-primary mt-3">View Schedule</router-link>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div v-if="!filteredDoctors.length && !errorMessage" class="text-center mt-5">
+        <p class="lead">No doctors found matching your criteria.</p>
+    </div>
+    <div v-if="errorMessage" class="alert alert-danger mt-5" role="alert">
+        {{ errorMessage }}
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
-import apiService from '@/services/apiService';
+import { ref, onMounted, computed } from 'vue';
+// import apiService from '@/services/apiService';
 
 const doctors = ref([]);
+const searchQuery = ref('');
 const errorMessage = ref('');
 
-onMounted(async () => {
+// Mock data for UI development
+const mockDoctors = [
+  { id: 1, name: 'Dr. Alice Williams', specialty: 'Cardiology', department: 'Heart & Vascular Institute' },
+  { id: 2, name: 'Dr. John Smith', specialty: 'Neurology', department: 'Brain & Spine Center' },
+  { id: 3, name: 'Dr. Patricia Jones', specialty: 'Dermatology', department: 'Skin Care Clinic' },
+  { id: 4, name: 'Dr. Michael Brown', specialty: 'Orthopedics', department: 'Bone & Joint Health' },
+  { id: 5, name: 'Dr. Linda Davis', specialty: 'Pediatrics', department: 'Children\'s Health' },
+  { id: 6, name: 'Dr. Robert Miller', specialty: 'Oncology', department: 'Cancer Treatment Center' },
+];
+
+const filteredDoctors = computed(() => {
+  if (!searchQuery.value) {
+    return doctors.value;
+  }
+  const lowerCaseQuery = searchQuery.value.toLowerCase();
+  return doctors.value.filter(doctor =>
+    doctor.name.toLowerCase().includes(lowerCaseQuery) ||
+    doctor.specialty.toLowerCase().includes(lowerCaseQuery)
+  );
+});
+
+onMounted(() => {
+  // Using mock data for now. The API call is commented out.
+  doctors.value = mockDoctors;
+  
+  /*
   try {
-    const response = await apiService.getDoctors();
-    doctors.value = response.data;
+    // const response = await apiService.getDoctors();
+    // doctors.value = response.data;
   } catch (error) {
     errorMessage.value = 'Failed to load doctors.';
     console.error(error);
   }
+  */
 });
 </script>
+
+<style scoped>
+.card {
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  cursor: pointer;
+}
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 1rem 3rem rgba(0,0,0,.175) !important;
+}
+.rounded-circle {
+  border: 3px solid #fff;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+.text-primary {
+    color: #0d6efd !important;
+}
+</style>
