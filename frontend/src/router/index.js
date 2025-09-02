@@ -27,6 +27,12 @@ const routes = [
     component: DoctorList,
     meta: { requiresAuth: true },
   },
+  {
+    path: '/doctors/:id',
+    name: 'DoctorDetail',
+    component: () => import('../views/DoctorDetail.vue'),
+    meta: { requiresAuth: true },
+  },
 ];
 
 const router = createRouter({

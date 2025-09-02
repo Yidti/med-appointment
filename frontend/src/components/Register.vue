@@ -85,13 +85,18 @@ const handleRegister = async () => {
       phone: phone.value,
       birthday: birthday.value,
     };
-    // await apiService.register(userData);
+    await apiService.register(userData);
     successMessage.value = 'Registration successful! Redirecting to login...';
     setTimeout(() => {
       router.push('/login');
     }, 2000);
   } catch (error) {
-    errorMessage.value = 'Registration failed. Please check your input.';
+    if (error.response && error.response.data) {
+      // 將後端回傳的 JSON 錯誤物件轉成字串，顯示出來
+      errorMessage.value = JSON.stringify(error.response.data);
+    } else {
+      errorMessage.value = 'An unexpected error occurred.';
+    }
     console.error(error);
   }
 };

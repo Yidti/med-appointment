@@ -30,7 +30,7 @@
       </div>
     </nav>
 
-    <main class="container-fluid my-5 px-lg-5">
+    <main>
       <router-view />
     </main>
   </div>

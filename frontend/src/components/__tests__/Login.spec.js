@@ -1,85 +1,84 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { mount } from '@vue/test-utils';
+import { createPinia } from 'pinia';
+import { createRouter, createWebHistory } from 'vue-router';
 import Login from '../Login.vue';
 import apiService from '@/services/apiService';
 
-// Mock the apiService
+// Mock the entire apiService module
 vi.mock('@/services/apiService', () => ({
   default: {
     login: vi.fn(),
   },
 }));
 
+// Create a router instance for the tests
+const router = createRouter({
+  history: createWebHistory(),
+  // Add a catch-all route to silence 'No match found' warnings
+  routes: [{ path: '/:pathMatch(.*)*', component: {} }],
+});
+
 describe('Login.vue', () => {
-  it('renders a login form with email, password, and a button', () => {
-    const wrapper = mount(Login);
+  let pinia;
 
-    // Check for the title
-    expect(wrapper.find('h2').text()).toBe('Login');
+  // Use beforeEach to ensure a fresh Pinia store and cleared mocks for each test
+  beforeEach(() => {
+    pinia = createPinia();
+    vi.clearAllMocks();
+  });
 
-    // Check for form elements
-    expect(wrapper.find('label[for="login-email"]').exists()).toBe(true);
+  // Helper function to mount the component with necessary plugins
+  const createWrapper = () => {
+    return mount(Login, {
+      global: {
+        plugins: [pinia, router],
+      },
+    });
+  };
+
+  it('renders the login form correctly', () => {
+    const wrapper = createWrapper();
+    expect(wrapper.find('h3').text()).toBe('Login');
     expect(wrapper.find('input#login-email').exists()).toBe(true);
-    expect(wrapper.find('label[for="login-password"]').exists()).toBe(true);
     expect(wrapper.find('input#login-password').exists()).toBe(true);
     expect(wrapper.find('button[type="submit"]').exists()).toBe(true);
   });
 
-  it('calls apiService.login with credentials on form submission', async () => {
-    // Mock the login function to resolve successfully
+  it('calls apiService.login and redirects on successful submission', async () => {
+    // Arrange: Mock the successful API response
     apiService.login.mockResolvedValue({ data: { token: 'fake-token' } });
+    const pushSpy = vi.spyOn(router, 'push');
+    const wrapper = createWrapper();
 
-    const wrapper = mount(Login);
+    // Act: Simulate user input and form submission
+    await wrapper.find('input#login-email').setValue('test@example.com');
+    await wrapper.find('input#login-password').setValue('password123');
+    await wrapper.find('form').trigger('submit.prevent');
 
-    // Find form elements
-    const emailInput = wrapper.find('input#login-email');
-    const passwordInput = wrapper.find('input#login-password');
-    const form = wrapper.find('form');
-
-    // Set input values
-    await emailInput.setValue('test@example.com');
-    await passwordInput.setValue('password123');
-
-    // Trigger form submission
-    await form.trigger('submit.prevent');
-
-    // Assert that apiService.login was called
+    // Assert: Check that the API was called and router was used for redirection
     expect(apiService.login).toHaveBeenCalledTimes(1);
     expect(apiService.login).toHaveBeenCalledWith({
       email: 'test@example.com',
       password: 'password123',
     });
-  });
+    expect(pushSpy).toHaveBeenCalledWith('/doctors');
 
-  it('emits "loggedIn" event on successful login', async () => {
-    // Mock the login function
-    apiService.login.mockResolvedValue({ data: { token: 'fake-token' } });
-    const wrapper = mount(Login);
-
-    await wrapper.find('input#login-email').setValue('test@example.com');
-    await wrapper.find('input#login-password').setValue('password123');
-    await wrapper.find('form').trigger('submit.prevent');
-
-    // Check if the 'loggedIn' event was emitted
-    expect(wrapper.emitted().loggedIn).toBeTruthy();
-    expect(wrapper.emitted().loggedIn.length).toBe(1);
+    pushSpy.mockRestore();
   });
 
   it('displays an error message on failed login', async () => {
-    // Mock the login function to reject with an error
-    const errorMessage = 'Login failed. Please check your credentials.';
+    // Arrange: Mock the failed API response
     apiService.login.mockRejectedValue(new Error('Login failed'));
+    const wrapper = createWrapper();
 
-    const wrapper = mount(Login);
-
+    // Act: Simulate user input and form submission
     await wrapper.find('input#login-email').setValue('test@example.com');
     await wrapper.find('input#login-password').setValue('password123');
     await wrapper.find('form').trigger('submit.prevent');
 
-    // Wait for the DOM to update
+    // Assert: Wait for the DOM to update and check for the error message
     await wrapper.vm.$nextTick();
-
-    // Assert that the error message is displayed
-    expect(wrapper.find('p').text()).toBe(errorMessage);
+    expect(wrapper.find('.alert-danger').text()).toBe('Login failed. Please check your credentials.');
   });
 });

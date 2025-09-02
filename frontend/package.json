@@ -7,10 +7,14 @@
     "node": "^20.19.0 || >=22.12.0"
   },
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --port 5173",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "vitest"
+    "test": "vitest run",
+    "start:backend": "../venv/bin/python ../manage.py runserver",
+    "test:e2e:run": "playwright test",
+    "ci:test:e2e": "wait-on -t 30000 http://localhost:5173 http://localhost:8000/api/doctors/ && npm run test:e2e:run",
+    "test:e2e": "npm-run-all --parallel --race dev start:backend ci:test:e2e"
   },
   "dependencies": {
     "axios": "^1.11.0",
@@ -26,9 +30,12 @@
     "@vitejs/plugin-vue": "^6.0.1",
     "@vue/test-utils": "^2.4.6",
     "eslint": "^9.9.1",
+    "jsdom": "^26.1.0",
+    "npm-run-all": "^4.1.5",
     "prettier": "^3.3.3",
     "vite": "^7.0.6",
     "vite-plugin-vue-devtools": "^8.0.0",
-    "vitest": "^2.0.5"
+    "vitest": "^2.0.5",
+    "wait-on": "^8.0.4"
   }
 }

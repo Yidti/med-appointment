@@ -52,13 +52,9 @@ const handleLogin = async () => {
       email: email.value,
       password: password.value,
     };
-    // Fake token for frontend testing
-    const fakeToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c';
-    auth.setToken(fakeToken);
+    const response = await apiService.login(credentials);
+    auth.setToken(response.data.token);
     router.push('/doctors');
-    // const response = await apiService.login(credentials);
-    // auth.setToken(response.data.token);
-    // router.push('/doctors');
   } catch (error) {
     errorMessage.value = 'Login failed. Please check your credentials.';
     console.error(error);
