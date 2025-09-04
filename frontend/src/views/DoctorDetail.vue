@@ -64,27 +64,12 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-
-// Mock data - in a real app, this would be in a store or fetched
-const mockDoctors = [
-  { id: 1, name: 'Dr. Alice Williams', specialty: 'Cardiology', department: 'Heart & Vascular Institute' },
-  { id: 2, name: 'Dr. John Smith', specialty: 'Neurology', department: 'Brain & Spine Center' },
-  { id: 3, name: 'Dr. Patricia Jones', specialty: 'Dermatology', department: 'Skin Care Clinic' },
-  { id: 4, name: 'Dr. Michael Brown', specialty: 'Orthopedics', department: 'Bone & Joint Health' },
-  { id: 5, name: 'Dr. Linda Davis', specialty: 'Pediatrics', department: 'Children\'s Health' },
-  { id: 6, name: 'Dr. Robert Miller', specialty: 'Oncology', department: 'Cancer Treatment Center' },
-];
-
-// Mock schedule data
-const mockSchedules = {
-  '1': [{id: 101, time: '09:00 AM'}, {id: 102, time: '11:00 AM'}, {id: 103, time: '02:00 PM'}],
-  '3': [{id: 301, time: '10:00 AM'}, {id: 302, time: '03:00 PM'}],
-  '5': [{id: 501, time: '09:30 AM'}, {id: 502, time: '10:30 AM'}, {id: 503, time: '11:30 AM'}],
-};
+import apiService from '@/services/apiService';
 
 const route = useRoute();
 const router = useRouter();
 const doctor = ref(null);
+const errorMessage = ref('');
 const selectedDate = ref(new Date().toISOString().slice(0, 10));
 const availableSlots = ref([]);
 const selectedSlot = ref(null);
@@ -96,34 +81,57 @@ const formattedDate = computed(() => {
   return date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 });
 
-const fetchSchedule = () => {
+const fetchSchedule = async () => {
+  if (!doctor.value) return;
   loadingSchedule.value = true;
   selectedSlot.value = null;
-  // Simulate API call
-  setTimeout(() => {
-    const doctorId = route.params.id;
-    // This is a very basic mock logic. A real app would have more complex date-based logic.
-    availableSlots.value = mockSchedules[doctorId] || [];
+  availableSlots.value = [];
+  try {
+    const response = await apiService.getSchedules(doctor.value.id, selectedDate.value);
+    // The backend returns schedule objects, let's format them for the frontend
+    availableSlots.value = response.data
+      .filter(slot => slot.is_available)
+      .map(slot => ({
+        id: slot.id,
+        time: new Date(`1970-01-01T${slot.start_time}`).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })
+      }));
+  } catch (error) {
+    console.error('Failed to fetch schedule:', error);
+    // Optionally set an error message for the schedule part
+  } finally {
     loadingSchedule.value = false;
-  }, 500);
+  }
 };
 
 const selectSlot = (slot) => {
   selectedSlot.value = slot;
 };
 
-const confirmBooking = () => {
+const confirmBooking = async () => {
   if (!selectedSlot.value) return;
-  // In a real app, you would call an API to create the appointment.
-  // Then navigate to a confirmation page.
-  alert(`Appointment booked with ${doctor.value.name} at ${selectedSlot.value.time} on ${formattedDate.value}!`);
-  router.push('/appointments'); // Assuming an appointments history page exists
+  try {
+    await apiService.createAppointment(selectedSlot.value.id);
+    alert(`Appointment booked successfully with ${doctor.value.name} at ${selectedSlot.value.time} on ${formattedDate.value}!`);
+    router.push('/'); // Navigate to home or an appointments page
+  } catch (error) {
+    console.error('Booking failed:', error);
+    alert('Failed to book appointment. The slot may have just been taken. Please try another.');
+    // Refresh schedule to get latest availability
+    fetchSchedule();
+  }
 };
 
-onMounted(() => {
-  const doctorId = parseInt(route.params.id);
-  doctor.value = mockDoctors.find(d => d.id === doctorId);
-  fetchSchedule();
+onMounted(async () => {
+  const doctorId = route.params.id;
+  try {
+    const response = await apiService.getDoctor(doctorId);
+    doctor.value = response.data;
+    // Now that we have the doctor, fetch their schedule for the default date
+    await fetchSchedule();
+  } catch (error) {
+    console.error('Failed to fetch doctor details:', error);
+    errorMessage.value = 'Could not load doctor details. Please try again later.';
+  }
 });
 </script>
 

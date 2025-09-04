@@ -8,6 +8,7 @@
   },
   "scripts": {
     "dev": "vite --port 5173",
+    "start": "npm-run-all --parallel dev start:backend",
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest run",

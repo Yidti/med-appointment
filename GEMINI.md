@@ -136,6 +136,16 @@ pytest
 
 如果您希望在開發過程中，讓測試工具持續監聽檔案變更並自動重跑測試，可以手動執行 `npx vitest` 或在 `package.json` 中建立一個專門的 `watch` 指令。
 
+**啟動開發伺服器**
+
+為了方便開發，我們建立了一個指令來同時啟動後端 Django 伺服器和前端 Vite 伺服器。請在 `frontend` 目錄下執行：
+
+```bash
+npm run start
+```
+
+這個指令會自動處理兩個伺erv器的啟動，讓您可以直接在 `http://localhost:5173` 上看到應用程式的變化。
+
 ---
 
 ### **Phase 3: 整合與端對端 (E2E) 測試**
@@ -242,3 +252,14 @@ npm run test:e2e
 4.  **查詢醫師可預約時段**: `GET /api/schedules/?doctor_id=1&date=...`。
 5.  **建立預約**: `POST /api/appointments/`，並展示資料庫中的變化。
 6.  **查詢與取消預約**: Demo `GET` 和 `PATCH` appointments 的功能。
+
+---
+
+## 附錄 D: 開發資料管理
+
+為了在開發過程中方便測試與驗證，我們需要有基礎資料（例如：醫師、門診時段）。本專案使用 Django 內建的 Admin 後台來管理這些核心資料。
+
+操作流程如下：
+1.  **建立超級使用者**：執行 `python manage.py createsuperuser` 來建立後台管理員帳號。
+2.  **註冊資料模型**：在 `api/admin.py` 中，將需要管理的模型（如 `Doctor`, `Schedule`）註冊到 Admin 站點。
+3.  **新增與管理資料**：啟動後端伺服器後，瀏覽 `http://localhost:8000/admin/`，使用超級使用者帳號登入，即可透過圖形化介面新增、修改或刪除資料。
