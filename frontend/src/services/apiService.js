@@ -46,7 +46,11 @@ export default {
 
   // Schedules
   getSchedules(doctorId, date) {
-    return apiClient.get(`/schedules/?doctor_id=${doctorId}&date=${date}`);
+    let url = `/schedules/?doctor_id=${doctorId}`;
+    if (date) {
+      url += `&date=${date}`;
+    }
+    return apiClient.get(url);
   },
 
   // Appointments

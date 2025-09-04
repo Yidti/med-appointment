@@ -29,59 +29,51 @@ describe('DoctorDetail.vue', () => {
   // Reset mocks before each test to ensure isolation
   beforeEach(() => {
     vi.clearAllMocks();
-    // Mock window.alert to prevent jsdom errors
     vi.spyOn(window, 'alert').mockImplementation(() => {});
   });
 
-  it('should fetch and display doctor details on mount', async () => {
-    const mockDoctor = { id: 1, name: 'Dr. API Fetched', specialty: 'TDD' };
+  it('fetches details and all schedules and displays them grouped by date', async () => {
+    const mockDoctor = { id: '1', name: 'Dr. API Fetched', specialty: 'TDD' };
+    const mockSchedules = [
+      { id: 101, date: '2025-10-20', start_time: '09:00:00', is_available: true },
+      { id: 102, date: '2025-10-21', start_time: '10:00:00', is_available: true },
+      { id: 103, date: '2025-10-20', start_time: '11:00:00', is_available: true },
+    ];
     apiService.getDoctor.mockResolvedValue({ data: mockDoctor });
-    // Mock schedule call during mount to prevent error
-    apiService.getSchedules.mockResolvedValue({ data: [] });
+    apiService.getSchedules.mockResolvedValue({ data: mockSchedules });
 
     const wrapper = mount(DoctorDetail);
+    await new Promise(resolve => setTimeout(resolve, 0)); // Wait for promises
+    await wrapper.vm.$nextTick(); // Wait for render
 
-    await new Promise(resolve => setTimeout(resolve, 0));
+    // Assert new UI: date picker should NOT exist
+    expect(wrapper.find('input[type="date"]').exists()).toBe(false);
 
-    expect(apiService.getDoctor).toHaveBeenCalledWith(mockDoctorId);
+    // Assert doctor details are shown
     expect(wrapper.text()).toContain(mockDoctor.name);
-    expect(wrapper.text()).toContain(mockDoctor.specialty);
-  });
 
-  it('fetches schedules when the date is changed', async () => {
-    const mockDoctor = { id: 1, name: 'Dr. API Fetched', specialty: 'TDD' };
-    apiService.getDoctor.mockResolvedValue({ data: mockDoctor });
-    apiService.getSchedules.mockResolvedValue({ data: [] }); // Initial call
-
-    const wrapper = mount(DoctorDetail);
-    await new Promise(resolve => setTimeout(resolve, 0)); // Wait for mount
-
-    // Find the date input and change its value
-    const newDate = '2025-11-22';
-    const dateInput = wrapper.find('input[type="date"]');
-    await dateInput.setValue(newDate);
-
-    // The @change event should trigger fetchSchedule
-    expect(apiService.getSchedules).toHaveBeenCalledWith(mockDoctor.id, newDate);
+    // Assert schedules are fetched (without a date) and shown grouped by date
+    expect(apiService.getSchedules).toHaveBeenCalledWith(mockDoctorId);
+    expect(wrapper.text()).toContain('October 20, 2025');
+    expect(wrapper.text()).toContain('October 21, 2025');
+    expect(wrapper.findAll('.list-group-item-action').length).toBe(3);
   });
 
   it('calls createAppointment when a slot is selected and button is clicked', async () => {
-    const mockDoctor = { id: 1, name: 'Dr. API Fetched', specialty: 'TDD' };
-    const mockSchedule = [{ id: 99, start_time: '10:00:00', is_available: true }];
+    const mockDoctor = { id: '1', name: 'Dr. API Fetched', specialty: 'TDD' };
+    const mockSchedule = [{ id: 99, date: '2025-10-20', start_time: '10:00:00', is_available: true }];
     apiService.getDoctor.mockResolvedValue({ data: mockDoctor });
     apiService.getSchedules.mockResolvedValue({ data: mockSchedule });
-    apiService.createAppointment.mockResolvedValue({ data: {} }); // Mock successful booking
+    apiService.createAppointment.mockResolvedValue({ data: {} });
 
     const wrapper = mount(DoctorDetail);
-    await new Promise(resolve => setTimeout(resolve, 0)); // Wait for mount and schedule fetch
-    await wrapper.vm.$nextTick(); // Wait for DOM update
+    await new Promise(resolve => setTimeout(resolve, 0));
+    await wrapper.vm.$nextTick();
 
-    // Find and click the available slot
     const slotButton = wrapper.find('.list-group-item-action');
     await slotButton.trigger('click');
     await wrapper.vm.$nextTick();
 
-    // Find and click the booking button
     const bookingButton = wrapper.find('.btn-primary');
     await bookingButton.trigger('click');
 

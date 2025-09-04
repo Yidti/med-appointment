@@ -15,33 +15,33 @@
               <div class="card-body p-4">
                 <h4 class="card-title mb-4">Book an Appointment</h4>
                 
-                <!-- Date Picker -->
-                <div class="mb-4">
-                  <label for="appointment-date" class="form-label">Select a Date:</label>
-                  <input type="date" class="form-control" id="appointment-date" v-model="selectedDate" @change="fetchSchedule">
-                </div>
-
                 <!-- Schedule/Time Slots -->
-                <h5>Available Slots for {{ formattedDate }}</h5>
                 <div v-if="loadingSchedule" class="text-center">
                   <div class="spinner-border text-primary" role="status">
                     <span class="visually-hidden">Loading...</span>
                   </div>
                 </div>
-                <div v-else-if="availableSlots.length > 0" class="list-group">
-                  <button 
-                    v-for="slot in availableSlots" 
-                    :key="slot.id" 
-                    type="button" 
-                    class="list-group-item list-group-item-action text-center"
-                    @click="selectSlot(slot)"
-                    :class="{ 'active': selectedSlot && selectedSlot.id === slot.id }"
-                  >
-                    {{ slot.time }}
-                  </button>
+
+                <div v-else-if="Object.keys(groupedSchedules).length > 0">
+                  <div v-for="(slots, date) in groupedSchedules" :key="date" class="mb-4">
+                    <h5 class="mb-3">{{ formatDate(date) }}</h5>
+                    <div class="list-group">
+                      <button 
+                        v-for="slot in slots" 
+                        :key="slot.id" 
+                        type="button" 
+                        class="list-group-item list-group-item-action text-center"
+                        @click="selectSlot(slot)"
+                        :class="{ 'active': selectedSlot && selectedSlot.id === slot.id }"
+                      >
+                        {{ slot.time }}
+                      </button>
+                    </div>
+                  </div>
                 </div>
+
                 <div v-else>
-                  <p class="text-muted">No available slots for this date. Please select another date.</p>
+                  <p class="text-muted">No available appointments for this doctor.</p>
                 </div>
 
                 <!-- Booking Button -->
@@ -70,34 +70,43 @@ const route = useRoute();
 const router = useRouter();
 const doctor = ref(null);
 const errorMessage = ref('');
-const selectedDate = ref(new Date().toISOString().slice(0, 10));
-const availableSlots = ref([]);
+const allSchedules = ref([]);
 const selectedSlot = ref(null);
 const loadingSchedule = ref(false);
 
-const formattedDate = computed(() => {
-  if (!selectedDate.value) return '';
-  const date = new Date(selectedDate.value);
-  return date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+const groupedSchedules = computed(() => {
+  return allSchedules.value.reduce((acc, slot) => {
+    const date = slot.date;
+    if (!acc[date]) {
+      acc[date] = [];
+    }
+    acc[date].push({
+      id: slot.id,
+      time: new Date(`1970-01-01T${slot.start_time}`).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })
+    });
+    return acc;
+  }, {});
 });
+
+const formatDate = (dateString) => {
+  const date = new Date(dateString);
+  // Adjust for timezone offset to prevent date from changing
+  const userTimezoneOffset = date.getTimezoneOffset() * 60000;
+  const adjustedDate = new Date(date.getTime() + userTimezoneOffset);
+  return adjustedDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+};
 
 const fetchSchedule = async () => {
   if (!doctor.value) return;
   loadingSchedule.value = true;
   selectedSlot.value = null;
-  availableSlots.value = [];
+  allSchedules.value = [];
   try {
-    const response = await apiService.getSchedules(doctor.value.id, selectedDate.value);
-    // The backend returns schedule objects, let's format them for the frontend
-    availableSlots.value = response.data
-      .filter(slot => slot.is_available)
-      .map(slot => ({
-        id: slot.id,
-        time: new Date(`1970-01-01T${slot.start_time}`).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })
-      }));
+    const response = await apiService.getSchedules(doctor.value.id);
+    allSchedules.value = response.data;
   } catch (error) {
     console.error('Failed to fetch schedule:', error);
-    // Optionally set an error message for the schedule part
+    errorMessage.value = 'Could not load schedule.';
   } finally {
     loadingSchedule.value = false;
   }
@@ -111,12 +120,11 @@ const confirmBooking = async () => {
   if (!selectedSlot.value) return;
   try {
     await apiService.createAppointment(selectedSlot.value.id);
-    alert(`Appointment booked successfully with ${doctor.value.name} at ${selectedSlot.value.time} on ${formattedDate.value}!`);
-    router.push('/'); // Navigate to home or an appointments page
+    alert(`Appointment booked successfully with ${doctor.value.name} at ${selectedSlot.value.time}!`);
+    router.push('/');
   } catch (error) {
     console.error('Booking failed:', error);
     alert('Failed to book appointment. The slot may have just been taken. Please try another.');
-    // Refresh schedule to get latest availability
     fetchSchedule();
   }
 };
@@ -126,7 +134,6 @@ onMounted(async () => {
   try {
     const response = await apiService.getDoctor(doctorId);
     doctor.value = response.data;
-    // Now that we have the doctor, fetch their schedule for the default date
     await fetchSchedule();
   } catch (error) {
     console.error('Failed to fetch doctor details:', error);
