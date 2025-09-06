@@ -11,7 +11,7 @@ class RegistrationAPITest(APITestCase):
         """
         url = reverse('register')
         data = {
-            "username": "testpatient",
+            "name": "testpatient",
             "email": "test.patient@example.com",
             "password": "someStrongPassword123",
             "phone": "1234567890",
@@ -129,8 +129,9 @@ class ScheduleAPITest(APITestCase):
 
         # Schedules for Doctor 1
         self.schedule1 = Schedule.objects.create(doctor=self.doctor1, date='2025-10-20', start_time='09:00', end_time='09:30', is_available=True)
-        self.schedule2 = Schedule.objects.create(doctor=self.doctor1, date='2025-10-20', start_time='10:00', end_time='10:30', is_available=False)
+        self.schedule2 = Schedule.objects.create(doctor=self.doctor1, date='2025-10-20', start_time='10:00', end_time='10:30', is_available=False) # Not available
         self.schedule3 = Schedule.objects.create(doctor=self.doctor1, date='2025-10-21', start_time='09:00', end_time='09:30', is_available=True)
+        self.past_schedule = Schedule.objects.create(doctor=self.doctor1, date='2020-01-01', start_time='09:00', end_time='09:30', is_available=True) # In the past
 
         # Schedule for Doctor 2
         self.schedule4 = Schedule.objects.create(doctor=self.doctor2, date='2025-10-20', start_time='14:00', end_time='14:30', is_available=True)
@@ -148,6 +149,22 @@ class ScheduleAPITest(APITestCase):
         # Check if the returned schedules belong to the correct doctor and date
         for schedule_data in response.data:
             self.assertEqual(schedule_data['doctor'], self.doctor1.pk)
+
+    def test_can_list_all_available_schedules_for_a_doctor(self):
+        """
+        Ensure API returns all future, available schedules for a doctor when no date is specified.
+        """
+        url = f"{reverse('schedule-list')}?doctor_id={self.doctor1.pk}"
+        response = self.client.get(url, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        
+        # Should return schedule1 and schedule3, but not schedule2 (unavailable) or past_schedule
+        self.assertEqual(len(response.data), 2)
+        
+        response_ids = {item['id'] for item in response.data}
+        self.assertIn(self.schedule1.id, response_ids)
+        self.assertIn(self.schedule3.id, response_ids)
 
 
 class AppointmentAPITest(APITestCase):

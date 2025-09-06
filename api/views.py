@@ -7,6 +7,7 @@ from rest_framework.authtoken.models import Token
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.authentication import TokenAuthentication
 from .models import Patient, Doctor, Schedule, Appointment
+from django.utils import timezone
 
 class PatientRegistrationView(APIView):
     """
@@ -79,9 +80,12 @@ class DoctorDetailView(generics.RetrieveAPIView):
     serializer_class = DoctorSerializer
 
 
+from django.utils import timezone
+
 class ScheduleListView(generics.ListAPIView):
     """
     List schedules, filtered by doctor_id and date.
+    If no date is provided, returns all future available schedules for the doctor.
     """
     serializer_class = ScheduleSerializer
 
@@ -99,6 +103,9 @@ class ScheduleListView(generics.ListAPIView):
         
         if date is not None:
             queryset = queryset.filter(date=date)
+        else:
+            # If no date is specified, return all available schedules from today onwards
+            queryset = queryset.filter(date__gte=timezone.now().date(), is_available=True)
             
         return queryset
 

@@ -43,21 +43,11 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue';
-// import apiService from '@/services/apiService';
+import apiService from '@/services/apiService';
 
 const doctors = ref([]);
 const searchQuery = ref('');
 const errorMessage = ref('');
-
-// Mock data for UI development
-const mockDoctors = [
-  { id: 1, name: 'Dr. Alice Williams', specialty: 'Cardiology', department: 'Heart & Vascular Institute' },
-  { id: 2, name: 'Dr. John Smith', specialty: 'Neurology', department: 'Brain & Spine Center' },
-  { id: 3, name: 'Dr. Patricia Jones', specialty: 'Dermatology', department: 'Skin Care Clinic' },
-  { id: 4, name: 'Dr. Michael Brown', specialty: 'Orthopedics', department: 'Bone & Joint Health' },
-  { id: 5, name: 'Dr. Linda Davis', specialty: 'Pediatrics', department: 'Children\'s Health' },
-  { id: 6, name: 'Dr. Robert Miller', specialty: 'Oncology', department: 'Cancer Treatment Center' },
-];
 
 const filteredDoctors = computed(() => {
   if (!searchQuery.value) {
@@ -70,19 +60,14 @@ const filteredDoctors = computed(() => {
   );
 });
 
-onMounted(() => {
-  // Using mock data for now. The API call is commented out.
-  doctors.value = mockDoctors;
-  
-  /*
+onMounted(async () => {
   try {
-    // const response = await apiService.getDoctors();
-    // doctors.value = response.data;
+    const response = await apiService.getDoctors();
+    doctors.value = response.data;
   } catch (error) {
-    errorMessage.value = 'Failed to load doctors.';
-    console.error(error);
+    errorMessage.value = 'Failed to load doctors. Please make sure you are logged in and the server is running.';
+    console.error('Error fetching doctors:', error);
   }
-  */
 });
 </script>
 
