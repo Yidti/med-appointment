@@ -33,6 +33,18 @@ const routes = [
     component: () => import('../views/DoctorDetail.vue'),
     meta: { requiresAuth: true },
   },
+  {
+    path: '/me',
+    name: 'Profile',
+    component: () => import('../views/Profile.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/booking/confirmation',
+    name: 'Confirmation',
+    component: () => import('../views/Confirmation.vue'),
+    meta: { requiresAuth: true },
+  },
 ];
 
 const router = createRouter({

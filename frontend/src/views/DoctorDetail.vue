@@ -120,8 +120,20 @@ const confirmBooking = async () => {
   if (!selectedSlot.value) return;
   try {
     await apiService.createAppointment(selectedSlot.value.id);
-    alert(`Appointment booked successfully with ${doctor.value.name} at ${selectedSlot.value.time}!`);
-    router.push('/');
+
+    const bookedSchedule = allSchedules.value.find(s => s.id === selectedSlot.value.id);
+
+    const appointmentDetails = {
+      doctor_name: doctor.value.name,
+      doctor_specialty: doctor.value.specialty,
+      schedule_date: bookedSchedule.date,
+      schedule_start_time: bookedSchedule.start_time,
+    };
+
+    router.push({
+      name: 'Confirmation',
+      state: { appointment: appointmentDetails },
+    });
   } catch (error) {
     console.error('Booking failed:', error);
     alert('Failed to book appointment. The slot may have just been taken. Please try another.');

@@ -14,6 +14,9 @@
             <li class="nav-item" v-if="auth.isLoggedIn">
               <router-link class="nav-link" active-class="active" to="/doctors">Doctors</router-link>
             </li>
+            <li class="nav-item" v-if="auth.isLoggedIn">
+              <router-link class="nav-link" active-class="active" to="/me">Profile</router-link>
+            </li>
           </ul>
           <ul class="navbar-nav">
             <li class="nav-item" v-if="!auth.isLoggedIn">
