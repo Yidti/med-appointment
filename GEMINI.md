@@ -51,7 +51,7 @@
         - 在完成一個功能或一個階段性任務後，都應建立一個清晰的 commit。
         - Commit message 應遵循 [Conventional Commits](https://www.conventionalcommits.org/) 規範 (例如 `feat(api): ...`, `fix(tests): ...`)，以保持歷史紀錄的可讀性。
         - 完成 commit 後，應將 `develop` 分支推送到遠端儲存庫 (git push origin develop)。
-- **部署**: AWS (EC2 + RDS)
+- **部署**: Render (Docker)
 
 ## 3. 開發方法論：測試驅動開發 (TDD)
 
@@ -285,4 +285,4 @@ npm run test:e2e
 操作流程如下：
 1.  **建立超級使用者**：執行 `python manage.py createsuperuser` 來建立後台管理員帳號。
 2.  **註冊資料模型**：在 `api/admin.py` 中，將需要管理的模型（如 `Doctor`, `Schedule`）註冊到 Admin 站點。
-3.  **新增與管理資料**：啟動後端伺服器後，瀏覽 `http://localhost:8000/admin/`，使用超級使用者帳號登入，即可透過圖形化介面新增、修改或刪除資料。�。
+3.  **新增與管理資料**：啟動後端伺服器後，瀏覽 `http://localhost:8000/admin/`，使用超級使用者帳號登入，即可透過圖形化介面新增、修改或刪除資料。�。

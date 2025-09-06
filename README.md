@@ -20,7 +20,7 @@
 
 -   確認您已安裝 **Python** (建議 3.9+)
 -   確認您已安裝 **Node.js** (建議 18+)
--   (可選) 如果您想使用 MySQL，請確認已安裝並啟動 **MySQL Server**。預設使用 `sqlite3`。
+-   **資料庫**: 本專案使用 **MySQL**。請確認您已安裝並啟動 MySQL Server，並在 `med_appointment/settings.py` 中設定正確的連線資訊 (使用者、密碼等)。
 
 ### 2. 後端設定
 
@@ -79,6 +79,8 @@ npm run start
     -   點擊 `Schedules` 並為醫師新增一些可預約的時段。
 
 完成後，您就可以開啟前端網站 `http://localhost:5173`，註冊一個普通使用者帳號，並開始進行預約操作。
+
+**快速提示**: 您也可以在專案根目錄下，執行 `venv/bin/python manage.py seed_test_doctor` 指令，來快速新增一位名為 "E2E Test Doctor" 的醫師及他的未來班表。
 
 ---
 
