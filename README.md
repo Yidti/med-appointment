@@ -106,3 +106,14 @@ npm test
 cd frontend
 npm run test:e2e
 ```
+
+---
+
+## API 文件 (API Documentation)
+
+本專案使用 `drf-yasg` 自動產生 API 文件。
+
+當後端伺服器啟動後，您可以透過以下網址存取互動式的 API 文件：
+
+- **Swagger UI:** [http://127.0.0.1:8000/swagger/](http://127.0.0.1:8000/swagger/)
+- **ReDoc:** [http://127.0.0.1:8000/redoc/](http://127.0.0.1:8000/redoc/)
