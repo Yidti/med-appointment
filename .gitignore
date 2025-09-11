@@ -139,4 +139,4 @@ cython_debug/
 temp.md
 error-context.md
 registration_error.log
-.DS_Store
+.DS_Storefrontend/storageState.json
