@@ -80,12 +80,12 @@ WSGI_APPLICATION = "med_appointment.wsgi.application"
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.mysql",
-        "NAME": "med_appointment_db",
-        "USER": "root",
-        "PASSWORD": "",
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": "testuser",
+        "USER": "testuser",
+        "PASSWORD": "testpassword",
         "HOST": "127.0.0.1",
-        "PORT": "3306",
+        "PORT": "5432",
     }
 }
 

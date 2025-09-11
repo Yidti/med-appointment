@@ -1,12 +1,12 @@
 # 醫療預約系統 Side Project
 
-這是一個用於展示 Django、Vue.js 與 MySQL 技術能力的 Side Project，嚴格遵循測試驅動開發（TDD）方法論，並模擬一個完整的產品開發流程。
+這是一個用於展示 Django、Vue.js 與 PostgreSQL 技術能力的 Side Project，嚴格遵循測試驅動開發（TDD）方法論，並模擬一個完整的產品開發流程。
 
 ## 核心技術棧
 
 -   **後端**: Django, Django REST Framework
 -   **前端**: Vue.js, Vue Router, Pinia
--   **資料庫**: MySQL
+-   **資料庫**: PostgreSQL
 -   **測試**: PyTest, Vitest, Playwright
 -   **API 文件**: drf-yasg (Swagger UI)
 
@@ -18,16 +18,17 @@
 
 ### 1. 環境準備
 
--   確認您已安裝 **Python** (建議 3.9+)
--   確認您已安裝 **Node.js** (建議 18+)
--   **資料庫**: 本專案使用 **MySQL**。請確認您已安裝並啟動 MySQL Server，並在 `med_appointment/settings.py` 中設定正確的連線資訊 (使用者、密碼等)。
+-   **Python**: 專案依賴的 `psycopg2-binary` 套件需要 C 語言編譯環境。為避免相容性問題，強烈建議使用 **Python 3.11**。
+-   **Node.js**: 建議使用 18+ 版本。
+-   **Docker**: 本地測試環境依賴 Docker 來啟動 PostgreSQL 資料庫。請確認您已安裝並啟動 Docker Desktop。
 
 ### 2. 後端設定
 
 從專案根目錄開始：
 
 ```bash
-# 1. 建立並啟動 Python 虛擬環境
+# 1. 建立並啟動 Python 3.11 虛擬環境
+# 確保您的 python 指令指向 Python 3.11
 python -m venv venv
 source venv/bin/activate # macOS/Linux
 # .\venv\Scripts\activate # Windows
@@ -35,10 +36,11 @@ source venv/bin/activate # macOS/Linux
 # 2. 安裝 Python 依賴套件
 pip install -r requirements.txt
 
-# 3. 執行資料庫遷移
-python manage.py migrate
+# 3. 執行資料庫遷移 (針對本地 Docker 測試資料庫)
+# 在執行測試前，您需要一個運行的本地資料庫容器
+# 請參考下方的「測試」章節來啟動它
 
-# 4. 建立後台管理員帳號
+# 4. 建立後台管理員帳號 (可選)
 # 依提示設定您的 email 和密碼
 python manage.py createsuperuser
 ```
@@ -57,6 +59,8 @@ npm install
 
 我們已設定好一鍵啟動指令，可同時運行前後端伺服器。
 
+**注意**: 此指令會啟動後端，並嘗試連接到 `settings.py` 中設定的資料庫。在本地開發時，請確保您的 Docker PostgreSQL 容器正在運行。
+
 ```bash
 # 確認您仍在 frontend 目錄下
 cd frontend
@@ -68,50 +72,74 @@ npm run start
 -   後端 API 將運行在 `http://localhost:8000`
 -   前端網站將運行在 `http://localhost:5173`
 
-### 5. (重要) 新增範例資料
-
-為了讓系統能夠正常操作，您需要先新增一些醫師和時段資料。
-
-1.  **開啟後台網頁**：瀏覽器開啟 [http://localhost:8000/admin/](http://localhost:8000/admin/)
-2.  **登入**：使用您在步驟 2.4 中建立的**管理員帳號密碼**登入。
-3.  **新增資料**：
-    -   點擊 `Doctors` 並新增幾位醫師。
-    -   點擊 `Schedules` 並為醫師新增一些可預約的時段。
-
-完成後，您就可以開啟前端網站 `http://localhost:5173`，註冊一個普通使用者帳號，並開始進行預約操作。
-
-**快速提示**: 您也可以在專案根目錄下，執行 `venv/bin/python manage.py seed_test_doctor` 指令，來快速新增一位名為 "E2E Test Doctor" 的醫師及他的未來班表。
-
 ---
 
 ## 測試
 
-#### 後端測試
+在執行任何測試前，請確保您沒有其他本地的 PostgreSQL 服務佔用 `5432` 連接埠。
+
+### 啟動本地測試資料庫
+
+所有測試都需要一個 PostgreSQL 資料庫。請執行以下指令來啟動一個 Docker 容器作為測試資料庫：
 
 ```bash
-# 確保虛擬環境已啟動
-pytest
+docker run --name med-postgres-test -e POSTGRES_USER=testuser -e POSTGRES_PASSWORD=testpassword -p 5432:5432 -d postgres
 ```
 
-#### 前端單元/元件測試
+測試結束後，可以使用 `docker stop med-postgres-test && docker rm med-postgres-test` 來關閉並移除容器。
+
+### 後端測試
+
+```bash
+# 確保虛擬環境已啟動，且測試資料庫容器正在運行
+./venv/bin/pytest
+```
+
+### 前端單元/元件測試
 
 ```bash
 cd frontend
 npm test
 ```
 
-#### 端對端 (E2E) 測試
+### 端對端 (E2E) 測試
+
+我們提供兩種執行 E2E 測試的方式：
+
+**1. 便利腳本 (適合本地開發)**
+
+此指令會自動處理資料庫遷移、啟動服務、執行測試和清理測試資料。我們已對其進行優化，但在某些情況下仍可能不穩定。
 
 ```bash
+# 進入 frontend 目錄
 cd frontend
 npm run test:e2e
+```
+
+**2. 手動循序流程 (最穩定，適用於 CI/CD)**
+
+如果便利腳本卡住，或在自動化環境中，請遵循此流程：
+
+```bash
+# 1. (手動) 確保測試資料庫容器正在運行
+
+# 2. (手動) 在一個終端機視窗中，於專案根目錄啟動後端 (背景運行)
+./venv/bin/python manage.py runserver &
+
+# 3. (手動) 在另一個終端機視窗中，於 frontend 目錄啟動前端 (背景運行)
+cd frontend
+npm run dev &
+
+# 4. 等待約 10 秒後，執行測試
+cd frontend
+npx playwright test
+
+# 5. (手動) 測試結束後，使用 kill 指令關閉背景服務
 ```
 
 ---
 
 ## API 文件 (API Documentation)
-
-本專案使用 `drf-yasg` 自動產生 API 文件。
 
 當後端伺服器啟動後，您可以透過以下網址存取互動式的 API 文件：
 
