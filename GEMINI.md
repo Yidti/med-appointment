@@ -11,7 +11,8 @@
 - **[✓] Phase 3: 整合與端對端 (E2E) 測試** - 已完成
     - **[✓]** 註冊流程
     - **[✓]** 登入與預約主流程
-- **[ ] Phase 4: API 文件與部署** - 未開始
+- **[ ] Phase 4: API 文件與部署** - 進行中
+    - **[✓]** API 文件 (Swagger) 整合
 
 ---
 
@@ -51,7 +52,7 @@
         - 在完成一個功能或一個階段性任務後，都應建立一個清晰的 commit。
         - Commit message 應遵循 [Conventional Commits](https://www.conventionalcommits.org/) 規範 (例如 `feat(api): ...`, `fix(tests): ...`)，以保持歷史紀錄的可讀性。
         - 完成 commit 後，應將 `develop` 分支推送到遠端儲存庫 (git push origin develop)。
-- **部署**: AWS (EC2 + RDS)
+- **部署**: GCP (Docker)
 
 ## 3. 開發方法論：測試驅動開發 (TDD)
 
@@ -201,15 +202,18 @@ npm run test:e2e
     - 安裝 `drf-yasg`。
     - 在專案的 `urls.py` 中加入 Swagger/ReDoc 的路由。
     - 確保 API 文件能正確呈現所有 Endpoints。
-2.  **部署 (AWS)**:
-    - **資料庫**: 建立一個 AWS RDS for MySQL 實例。將 Django `settings.py` 中的資料庫設定指向 RDS。
+2.  **部署 (GCP - Google Cloud Platform)**:
+    - **資料庫**: 使用 **PlanetScale** 的免費方案，建立一個 MySQL 相容資料庫。
+    - **主機 (Host)**:
+        - 在 GCP 上使用 **Compute Engine** 服務，建立一台 `e2-micro` 的永久免費虛擬主機。
+        - 作業系統選擇 Ubuntu，並設定防火牆規則。
     - **後端**:
-        - 將 Django 專案打包成 Docker Image。
-        - 部署至 AWS EC2，使用 Gunicorn + Nginx 提供服務。
+        - 透過 **Docker** 將 Django 專案打包成容器。
+        - 在 GCP 主機上使用 Docker Compose、Gunicorn 和 Nginx 來部署及提供服務。
     - **前端**:
         - 執行 `npm run build`。
-        - 將 `dist` 目錄下的靜態檔案部署到 S3 或直接由 Nginx 提供。
-    - **CI/CD**: (可選) 設定 GitHub Actions，當 `main` 分支有更新時，自動執行測試、打包並部署到 AWS。
+        - 將 `dist` 目錄下的靜態檔案由 GCP 主機上的 Nginx 提供服務。
+    - **CI/CD**: (可選) 設定 GitHub Actions 或 Google Cloud Build，當 `main` 分支有更新時，自動執行測試、打包並部署到 GCP。
 
 ---
 
@@ -285,4 +289,4 @@ npm run test:e2e
 操作流程如下：
 1.  **建立超級使用者**：執行 `python manage.py createsuperuser` 來建立後台管理員帳號。
 2.  **註冊資料模型**：在 `api/admin.py` 中，將需要管理的模型（如 `Doctor`, `Schedule`）註冊到 Admin 站點。
-3.  **新增與管理資料**：啟動後端伺服器後，瀏覽 `http://localhost:8000/admin/`，使用超級使用者帳號登入，即可透過圖形化介面新增、修改或刪除資料。�。
+3.  **新增與管理資料**：啟動後端伺服器後，瀏覽 `http://localhost:8000/admin/`，使用超級使用者帳號登入，即可透過圖形化介面新增、修改或刪除資料。�。
