@@ -10,7 +10,12 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
+import os
 from pathlib import Path
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,12 +25,18 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-!omw2vv1(*u!$e+#kee!s$s%19!9s#z%)@5p3)cse-fqlhu6u("
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-!omw2vv1(*u!$e+#kee!s$s%19!9s#z%)@5p3)cse-fqlhu6u(')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# The `DYNO` env var is set by Heroku, a common deployment platform.
+# We use it as a proxy to determine if we are in a production environment.
+# For GCP, we will set this variable manually.
+IS_PRODUCTION = os.environ.get('DYNO') is not None
 
-ALLOWED_HOSTS = []
+DEBUG = not IS_PRODUCTION
+
+# We will add our actual domain name here during the deployment process.
+ALLOWED_HOSTS = ['*'] if not IS_PRODUCTION else ['your_domain.com']
 
 
 # Application definition
@@ -78,16 +89,30 @@ WSGI_APPLICATION = "med_appointment.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": "testuser",
-        "USER": "testuser",
-        "PASSWORD": "testpassword",
-        "HOST": "127.0.0.1",
-        "PORT": "5432",
+if IS_PRODUCTION:
+    # Production database configuration (reads from environment variables)
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.environ.get('DB_NAME'),
+            'USER': os.environ.get('DB_USER'),
+            'PASSWORD': os.environ.get('DB_PASSWORD'),
+            'HOST': os.environ.get('DB_HOST'),
+            'PORT': os.environ.get('DB_PORT'),
+        }
     }
-}
+else:
+    # Local development/testing database configuration
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": "testuser",
+            "USER": "testuser",
+            "PASSWORD": "testpassword",
+            "HOST": "127.0.0.1",
+            "PORT": "5432",
+        }
+    }
 
 
 # Password validation
@@ -134,6 +159,5 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # Custom User Model
 AUTH_USER_MODEL = 'api.Patient'
 
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",
-]
+# In production, we will set this to our frontend's domain name.
+CORS_ALLOWED_ORIGINS = os.environ.get('CORS_ALLOWED_ORIGINS', 'http://localhost:5173').split(',')
