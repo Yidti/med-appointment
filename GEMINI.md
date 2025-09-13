@@ -328,4 +328,18 @@ npm run test:e2e
 3.  **專案 Docker 化**: 在本地專案中，建立了部署所需的關鍵檔案：
     - `Dockerfile`: 定義如何建置 Django 應用程式的映像檔。
     - `nginx/nginx.conf`: Nginx 的設定檔，用於反向代理和提供靜態檔案。
-    - `docker-compose.yml`: 核心的編排檔案，用於定義和運行 `backend` 與 `nginx` 兩個服務。�。
+    - `docker-compose.yml`: 核心的編排檔案，用於定義和運行 `backend` 與 `nginx` 兩個服務。
+
+### 4. 史詩級除錯 (Epic Debugging Session)
+
+在本地 Docker 環境中運行 E2E 測試時，我們遭遇了頑固的、不斷變化的錯誤，這個過程揭示了多個層面的問題。最終，在您的幫助下，我們發現了兩個最根本的原因：
+
+1.  **Docker 映像檔建置失敗**: 
+    - **現象**: E2E 測試反覆失敗，顯示舊的、已修復的錯誤。
+    - **根源**: 您發現了 `no space left on device` 的錯誤訊息。原因是 `COPY . /app/` 指令試圖複製包括 `node_modules` 在內的所有檔案，導致 Docker 建置環境空間不足，映像檔建置失敗。因此，測試一直針對舊的、錯誤的映像檔運行。
+    - **解決方案**: 建立 `.dockerignore` 檔案，排除所有不必要的檔案和目錄，確保映像檔能被正確地建置。
+
+2.  **前端 API 位址寫死**: 
+    - **現象**: 即使映像檔建置成功，手動測試和 E2E 測試的註冊功能依然失敗，但 `curl` 指令卻能成功。
+    - **根源**: 您提供了瀏覽器的「Request Headers」，我們發現前端 `apiService.js` 中的 `baseURL` 被寫死為 `http://127.0.0.1:8000/api`。這導致瀏覽器直接嘗試連接後端容器（但該連接埠未對外暴露），而不是透過 Nginx 的 80 連接埠代理。
+    - **解決方案**: 將 `baseURL` 修改為相對路徑 `/api`，讓所有請求都先經過 Nginx。�。
