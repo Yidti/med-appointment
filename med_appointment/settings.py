@@ -10,7 +10,12 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
+import os
 from pathlib import Path
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,12 +25,16 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-!omw2vv1(*u!$e+#kee!s$s%19!9s#z%)@5p3)cse-fqlhu6u("
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-!omw2vv1(*u!$e+#kee!s$s%19!9s#z%)@5p3)cse-fqlhu6u(')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+IS_PRODUCTION = os.environ.get('DYNO') is not None
+DEBUG = not IS_PRODUCTION
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
+
+# In production, we will set this to our frontend's domain name.
+CORS_ALLOWED_ORIGINS = os.environ.get('CORS_ALLOWED_ORIGINS', 'http://localhost:5173').split(',')
 
 
 # Application definition
@@ -78,16 +87,30 @@ WSGI_APPLICATION = "med_appointment.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": "testuser",
-        "USER": "testuser",
-        "PASSWORD": "testpassword",
-        "HOST": "127.0.0.1",
-        "PORT": "5432",
+if IS_PRODUCTION:
+    # Production database configuration (reads from environment variables)
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.environ.get('DB_NAME'),
+            'USER': os.environ.get('DB_USER'),
+            'PASSWORD': os.environ.get('DB_PASSWORD'),
+            'HOST': os.environ.get('DB_HOST'),
+            'PORT': os.environ.get('DB_PORT'),
+        }
     }
-}
+else:
+    # Local development/testing database configuration
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": "testuser",
+            "USER": "testuser",
+            "PASSWORD": "testpassword",
+            "HOST": "127.0.0.1",
+            "PORT": "5432",
+        }
+    }
 
 
 # Password validation
@@ -114,7 +137,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = "en-us"
 
-TIME_ZONE = "UTC"
+TIME_ZONE = "Asia/Taipei"
 
 USE_I18N = True
 
@@ -125,6 +148,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = "static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -133,7 +157,3 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Custom User Model
 AUTH_USER_MODEL = 'api.Patient'
-
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",
-]

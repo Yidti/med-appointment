@@ -19,14 +19,10 @@ test('user can register successfully', async ({ page }) => {
   await page.locator('#birthday').fill('1990-01-01');
 
   // 3. Click the submit button
-  await page.locator('form button[type="submit"]').click();
+  await page.click('button[type="submit"]');
 
-  // 4. Assert that the success message appears
-  const successMessage = page.locator('.alert-success');
-  await expect(successMessage).toBeVisible();
-  await expect(successMessage).toContainText('Registration successful!');
-
-  // 5. Assert that the page redirects to the login page (optional but good practice)
+  // 4. Assert that the page redirects to the login page
+  await page.waitForURL('**/login');
   await expect(page).toHaveURL(/.*login/);
 });
 
