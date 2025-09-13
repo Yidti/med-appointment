@@ -143,3 +143,4 @@ registration_error.log
 
 # Environment variables
 .env
+.DS_Store.DS_Store

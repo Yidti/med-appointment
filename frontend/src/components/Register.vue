@@ -46,13 +46,16 @@
               <div class="text-center mt-4">
                 <router-link to="/login" class="small">Have an account? Go to login</router-link>
               </div>
+
+              <!-- Alerts moved inside card-body -->
+              <div v-if="successMessage" class="alert alert-success mt-3" role="alert">
+                {{ successMessage }}
+              </div>
+              <div v-if="errorMessage" class="alert alert-danger mt-3" role="alert">
+                {{ errorMessage }}
+              </div>
+
             </div>
-          </div>
-          <div v-if="successMessage" class="alert alert-success mt-3" role="alert">
-            {{ successMessage }}
-          </div>
-          <div v-if="errorMessage" class="alert alert-danger mt-3" role="alert">
-            {{ errorMessage }}
           </div>
         </div>
       </div>
@@ -87,9 +90,8 @@ const handleRegister = async () => {
     };
     await apiService.register(userData);
     successMessage.value = 'Registration successful! Redirecting to login...';
-    setTimeout(() => {
-      router.push('/login');
-    }, 2000);
+    // Immediately push to login page on success
+    router.push('/login');
   } catch (error) {
     if (error.response && error.response.data) {
       // 將後端回傳的 JSON 錯誤物件轉成字串，顯示出來

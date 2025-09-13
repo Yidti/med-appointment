@@ -13,3 +13,4 @@ sqlparse==0.5.3
 drf-yasg==1.21.7
 setuptools
 python-dotenv
+gunicorn

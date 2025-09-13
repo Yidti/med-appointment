@@ -28,15 +28,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-!omw2vv1(*u!$e+#kee!s$s%19!9s#z%)@5p3)cse-fqlhu6u(')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-# The `DYNO` env var is set by Heroku, a common deployment platform.
-# We use it as a proxy to determine if we are in a production environment.
-# For GCP, we will set this variable manually.
 IS_PRODUCTION = os.environ.get('DYNO') is not None
-
 DEBUG = not IS_PRODUCTION
 
-# We will add our actual domain name here during the deployment process.
-ALLOWED_HOSTS = ['*'] if not IS_PRODUCTION else ['your_domain.com']
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '127.0.0.1,localhost').split(',')
+
+# In production, we will set this to our frontend's domain name.
+CORS_ALLOWED_ORIGINS = os.environ.get('CORS_ALLOWED_ORIGINS', 'http://localhost:5173').split(',')
 
 
 # Application definition
@@ -139,7 +137,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = "en-us"
 
-TIME_ZONE = "UTC"
+TIME_ZONE = "Asia/Taipei"
 
 USE_I18N = True
 
@@ -150,6 +148,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = "static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -158,6 +157,3 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Custom User Model
 AUTH_USER_MODEL = 'api.Patient'
-
-# In production, we will set this to our frontend's domain name.
-CORS_ALLOWED_ORIGINS = os.environ.get('CORS_ALLOWED_ORIGINS', 'http://localhost:5173').split(',')

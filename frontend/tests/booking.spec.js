@@ -20,9 +20,10 @@ test.describe('Booking Flow', () => {
     await page.fill('#phone', '1112223333');
     await page.fill('#birthday', '1991-01-01');
     await page.click('button[type="submit"]');
-    // After registration, wait for the navigation to the login page to complete.
-    // The component has a 2-second delay, so we wait for a login-specific element.
-    await expect(page.locator('#login-email')).toBeVisible({ timeout: 5000 });
+
+    // Wait for the navigation to the login page to complete.
+    await page.waitForURL('**/login');
+    await expect(page.locator('#login-email')).toBeVisible();
 
     // Log in
     await page.fill('#login-email', uniqueEmail);
