@@ -1,0 +1,19 @@
+# Git
+.git
+
+# Python
+venv/
+__pycache__/
+*.pyc
+
+# Node
+frontend/node_modules
+frontend/dist
+
+# IDE / OS
+.vscode/
+.DS_Store
+
+# Test results
+frontend/test-results/
+frontend/playwright-report/
