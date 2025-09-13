@@ -319,4 +319,13 @@ npm run test:e2e
         - **長期優化**: 我們優化了 `package.json` 中的 `start:backend` 指令，在 `runserver` 前加入 `migrate --no-input`，使其在本地開發時更加穩健。
         - **策略結論**: 未來開發將採取雙軌策略：
             - **本地開發**: 使用優化後的一鍵 `npm run test:e2e` 指令，求方便快速。
-            - **CI/CD 自動化**: 採用最穩健的手動循序流程（啟動-等待-測試-清理），確保在自動化部署中的絕對可靠性。�。
+            - **CI/CD 自動化**: 採用最穩健的手動循序流程（啟動-等待-測試-清理），確保在自動化部署中的絕對可靠性。
+
+### 3. 部署流程 (Part 1): 伺服器建置與 Docker 化
+
+1.  **建立 GCP 虛擬主機**: 建立了一台 `e2-micro` 的 Compute Engine 執行個體。值得注意的是，為了符合永久免費資格，區域需選擇指定的美國區域（如 `us-west1`），且作業系統最終確認為 **Debian**，而非原先設想的 Ubuntu。
+2.  **安裝伺服器環境**: 透過 SSH 連線到主機，並根據 Debian 系統調整了安裝指令，成功安裝了 Docker, Docker Compose, 以及 Nginx。
+3.  **專案 Docker 化**: 在本地專案中，建立了部署所需的關鍵檔案：
+    - `Dockerfile`: 定義如何建置 Django 應用程式的映像檔。
+    - `nginx/nginx.conf`: Nginx 的設定檔，用於反向代理和提供靜態檔案。
+    - `docker-compose.yml`: 核心的編排檔案，用於定義和運行 `backend` 與 `nginx` 兩個服務。�。

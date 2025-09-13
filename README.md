@@ -137,6 +137,40 @@ npx playwright test
 # 5. (手動) 測試結束後，使用 kill 指令關閉背景服務
 ```
 
+### 遠端資料庫連線測試 (Remote Database Connection Test)
+
+在部署到雲端平台前，您可以在本地驗證與遠端資料庫（例如 Supabase）的連線是否正常。本專案使用 `python-dotenv` 來管理環境變數。
+
+1.  **建立 `.env` 檔案**: 在專案的根目錄（與 `manage.py` 同層）建立一個名為 `.env` 的檔案。
+
+2.  **填寫變數**: 將您的遠端資料庫連線資訊填入 `.env` 檔案中，格式如下。`DYNO=1` 是必須的，它會觸發 `settings.py` 中的生產環境模式。
+
+    ```dotenv
+    # --- Production Environment Settings ---
+    DYNO=1
+    SECRET_KEY=your_production_secret_key_here
+
+    # --- Database Settings (from Supabase or other provider) ---
+    DB_HOST=your_remote_db_host
+    DB_NAME=your_remote_db_name
+    DB_USER=your_remote_db_user
+    DB_PASSWORD=your_remote_db_password
+    DB_PORT=your_remote_db_port
+
+    # --- CORS Settings (your frontend domain) ---
+    CORS_ALLOWED_ORIGINS=http://your_frontend_domain.com,http://localhost:5173
+    ```
+
+3.  **執行檢查**: 執行 Django 的 `check` 指令，它會嘗試連接資料庫。
+
+    ```bash
+    ./venv/bin/python manage.py check
+    ```
+
+4.  **驗證結果**: 如果您看到 `System check identified no issues (0 silenced).` 的訊息，代表連線成功。
+
+> **⚠️ 安全警告**: `README.md` 中已將 `.env` 檔案加入 `.gitignore`。請再次確認，絕對不要將包含敏感資訊的 `.env` 檔案提交到版本控制系統。
+
 ---
 
 ## API 文件 (API Documentation)
@@ -145,3 +179,34 @@ npx playwright test
 
 - **Swagger UI:** [http://127.0.0.1:8000/swagger/](http://127.0.0.1:8000/swagger/)
 - **ReDoc:** [http://127.0.0.1:8000/redoc/](http://127.0.0.1:8000/redoc/)
+
+---
+
+## 部署 (Deployment)
+
+本章節提供將此專案部署到雲端伺服器（以 GCP 為例）的完整流程。
+
+### 1. 雲端主機設定
+
+1.  **建立 VM 執行個體**: 在 GCP Compute Engine 上，建立一台 `e2-micro` 的 VM，為符合永久免費資格，區域請選擇指定的美國區域（如 `us-west1`）。作業系統選擇 **Debian** (例如 Debian 11 或 12)。
+2.  **設定防火牆**: 建立 VM 時，務必勾選「允許 HTTP 流量」和「允許 HTTPS 流量」。
+3.  **安裝環境**: 透過 SSH 登入主機，並安裝 Docker, Docker Compose, 和 Nginx。請參考 `GEMINI.md` 開發日誌中的詳細指令。
+
+### 2. 部署應用程式
+
+1.  **Clone 專案**: 在遠端主機的家目錄中，執行 `git clone https://github.com/Yidti/med-appointment.git`。
+2.  **進入專案目錄**: `cd med-appointment`。
+3.  **設定環境變數**: 
+    - 在專案根目錄手動建立 `.env` 檔案：`nano .env`。
+    - 參考 `README.md` 中的「遠端資料庫連線測試」章節，將所有必要的生產環境變數（資料庫連線資訊、SECRET_KEY 等）填入檔案中。
+4.  **啟動服務**: 使用 Docker Compose 一鍵啟動所有服務。
+    ```bash
+    sudo docker compose up -d --build
+    ```
+    - `-d` 參數代表在背景運行。
+    - `--build` 參數會強制 Docker 在啟動前，根據最新的 `Dockerfile` 重新建置映像檔。
+
+### 3. 驗證部署
+
+-   在瀏覽器中，輸入您 GCP 主機的「外部 IP 位址」。如果一切順利，您應該能看到 Vue.js 應用程式的前端介面。
+-   您可以嘗試註冊、登入、預約，確認所有功能都與生產資料庫正常互動。
