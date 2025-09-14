@@ -10,8 +10,8 @@
                 <div class="row mb-3">
                   <div class="col-md-6">
                     <div class="form-floating mb-3 mb-md-0">
-                      <input class="form-control" id="name" type="text" placeholder="Enter your name" v-model="name" required />
-                      <label for="name">Name</label>
+                      <input class="form-control" id="first_name" type="text" placeholder="Enter your first name" v-model="first_name" required />
+                      <label for="first_name">First Name</label>
                     </div>
                   </div>
                   <div class="col-md-6">
@@ -68,7 +68,7 @@ import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import apiService from '@/services/apiService';
 
-const name = ref('');
+const first_name = ref('');
 const email = ref('');
 const password = ref('');
 const phone = ref('');
@@ -82,7 +82,7 @@ const handleRegister = async () => {
   successMessage.value = '';
   try {
     const userData = {
-      name: name.value,
+      first_name: first_name.value,
       email: email.value,
       password: password.value,
       phone: phone.value,

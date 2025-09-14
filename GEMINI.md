@@ -30,7 +30,7 @@
 
 - **後端**: Django, Django REST Framework
 - **前端**: Vue.js, Vue Router, Pinia (或 Vuex)
-- **資料庫**: MySQL
+- **資料庫**: PostgreSQL
 - **測試**:
     - **後端**: PyTest, Django's `TestCase`
     - **前端**: Vitest, Vue Testing Library
@@ -180,19 +180,45 @@ npm run start
 
 **執行 E2E 測試**
 
-我們已經設定了一個自動化的指令來執行 E2E 測試。請在 `frontend` 目錄下執行：
+我們採用雙軌策略來執行 E2E 測試，以兼顧開發效率與自動化流程的穩定性。
+
+**方法一：快速本地測試 (npm 指令)**
+
+此方法專為本地開發設計，一個指令即可啟動所需服務並執行測試，非常方便。
 
 ```bash
+# 進入 frontend 目錄
+cd frontend
+
+# 執行測試
 npm run test:e2e
 ```
 
-這個指令會執行以下全自動流程：
-1.  使用 `npm-run-all` **同時啟動**後端 Django 伺服器和前端 Vite 伺服器。
-2.  使用 `wait-on` **等待** `http://localhost:8000` (後端) 和 `http://localhost:5173` (前端) 都準備就緒。
-3.  成功等到之後，執行 `playwright test` 開始進行 E2E 測試。
-4.  測試結束後，`npm-run-all` 會**自動關閉**先前啟動的兩個伺服器進程，不會留下殭屍進程。
+此指令會使用 `npm-run-all` 平行啟動後端與前端開發伺服器，並在它們就緒後執行 Playwright 測試。雖然方便，但在極少數情況下可能因服務啟動順序問題而不穩定。
 
-這個設定確保了 E2E 測試在一個乾淨、一致的環境中執行，大幅提升了測試的便利性與可靠性。
+**方法二：高穩定性測試 (CI/CD 或手動)**
+
+此方法採用循序啟動、等待、測試、清理的流程，是 CI/CD 或需要最高穩定性的手動測試時的標準作法。
+
+```bash
+# 1. (從專案根目錄) 啟動後端伺服器
+(source venv/bin/activate && python manage.py migrate && python manage.py runserver) &
+BACKEND_PID=$!
+
+# 2. (進入 frontend 目錄) 啟動前端伺服器
+(cd frontend && npm run dev) &
+FRONTEND_PID=$!
+
+# 3. 等待服務就緒
+npx wait-on http://localhost:8000 http://localhost:5173
+
+# 4. 執行 Playwright 測試
+(cd frontend && npx playwright test)
+
+# 5. 清理背景進程
+kill $BACKEND_PID
+kill $FRONTEND_PID
+```
 
 ---
 

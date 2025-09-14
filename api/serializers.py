@@ -4,14 +4,14 @@ from django.contrib.auth import authenticate
 
 class PatientSerializer(serializers.ModelSerializer):
     # The frontend sends 'name', and we make it write-only.
-    name = serializers.CharField(write_only=True)
+    first_name = serializers.CharField(write_only=True)
     password = serializers.CharField(write_only=True)
 
     class Meta:
         model = Patient
         # 'username' is handled internally, not exposed to the client for registration.
-        fields = ('id', 'name', 'email', 'password', 'phone', 'birthday')
-        read_only_fields = ('id',)
+        fields = ('id', 'username', 'first_name', 'email', 'password', 'phone', 'birthday')
+        read_only_fields = ('id', 'username',)
 
     def create(self, validated_data):
         """
@@ -23,7 +23,7 @@ class PatientSerializer(serializers.ModelSerializer):
             username=validated_data['email'],  # Use email for the username field
             email=validated_data['email'],
             password=validated_data['password'],
-            first_name=validated_data.get('name', ''),  # Use name for first_name
+            first_name=validated_data.get('first_name', ''),  # Use first_name
             phone=validated_data.get('phone'),
             birthday=validated_data.get('birthday')
         )
@@ -38,24 +38,29 @@ class EmailAuthTokenSerializer(serializers.Serializer):
     )
 
     def validate(self, attrs):
-        email = attrs.get('email')
-        password = attrs.get('password')
+        try:
+            email = attrs.get('email')
+            password = attrs.get('password')
 
-        if email and password:
-            # Since we set USERNAME_FIELD = 'email' in our Patient model,
-            # Django's authenticate function will correctly handle email as the username.
-            user = authenticate(request=self.context.get('request'),
-                                username=email, password=password)
+            print(f"[Auth Debug] Email: {email}, Password: {password}")
+            if email and password:
+                # Since we set USERNAME_FIELD = 'email' in our Patient model,
+                # Django's authenticate function will correctly handle email as the username.
+                user = authenticate(request=self.context.get('request'),
+                                    username=email, password=password)
+                print(f"[Auth Debug] User object: {user}")
 
-            if not user:
-                msg = 'Unable to log in with provided credentials.'
+                if not user:
+                    msg = 'Unable to log in with provided credentials.'
+                    raise serializers.ValidationError(msg, code='authorization')
+            else:
+                msg = 'Must include "email" and "password".'
                 raise serializers.ValidationError(msg, code='authorization')
-        else:
-            msg = 'Must include "email" and "password".'
-            raise serializers.ValidationError(msg, code='authorization')
 
-        attrs['user'] = user
-        return attrs
+            attrs['user'] = user
+            return attrs
+        except Exception as e:
+            raise serializers.ValidationError(str(e))
 
 
 class DoctorSerializer(serializers.ModelSerializer):

@@ -54,7 +54,9 @@ const handleLogin = async () => {
     };
     const response = await apiService.login(credentials);
     auth.setToken(response.data.token);
+    console.log('Login successful, attempting to redirect...');
     router.push('/doctors');
+    console.log('Redirect call finished.');
   } catch (error) {
     errorMessage.value = 'Login failed. Please check your credentials.';
     console.error(error);

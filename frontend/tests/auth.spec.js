@@ -1,4 +1,3 @@
-
 import { test, expect } from '@playwright/test';
 
 test('user can register successfully', async ({ page }) => {
@@ -12,7 +11,7 @@ test('user can register successfully', async ({ page }) => {
   // 2. Wait for the form to be visible and fill it out
   await expect(page.locator('h3:has-text("Create Account")')).toBeVisible();
 
-  await page.locator('#name').fill('Test User');
+  await page.locator('#first_name').fill('Test User');
   await page.locator('#email').fill(uniqueEmail);
   await page.locator('#password').fill(password);
   await page.locator('#phone').fill('1234567890');
@@ -25,4 +24,3 @@ test('user can register successfully', async ({ page }) => {
   await page.waitForURL('**/login');
   await expect(page).toHaveURL(/.*login/);
 });
-
