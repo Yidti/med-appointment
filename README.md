@@ -78,6 +78,72 @@ cd frontend
 npx playwright test
 ```
 
+> **注意**: 雖然此指令方便，但在某些情況下，由於前後端服務啟動時序問題，可能會導致測試不穩定。若遇到 E2E 測試失敗，建議參考下方的「E2E 測試偵錯指南」採用更穩定的循序執行方式進行偵錯。
+
+---
+
+## E2E 測試偵錯指南 (E2E Test Debugging Guide)
+
+當 E2E 測試失敗時，請按照以下步驟進行偵錯：
+
+### 1. 優先使用穩定測試流程
+
+若您是使用 `npm run test:e2e` (並行啟動) 遇到問題，請改用以下循序執行流程，以排除服務啟動時序導致的不穩定性。為了方便，我們已將這些步驟整合為一個 Shell Script (`run_e2e_local.sh`)：
+
+```bash
+#!/bin/bash
+
+# Exit immediately if a command exits with a non-zero status.
+set -e
+
+echo "--- Seeding test data ---"
+./venv/bin/python manage.py seed_test_doctor
+
+echo "--- Starting backend server in background ---"
+(./venv/bin/python manage.py migrate --no-input && ./venv/bin/python manage.py runserver) &
+BACKEND_PID=$!
+echo "Backend PIDs: $BACKEND_PID"
+
+echo "--- Starting frontend server in background ---"
+(cd frontend && npm run dev) &
+FRONTEND_PID=$!
+echo "Frontend PIDs: $FRONTEND_PID"
+
+echo "--- Waiting for services to be ready ---"
+npx wait-on http://localhost:5173 http://localhost:8000/api/doctors/
+
+echo "--- Running Playwright E2E tests ---"
+cd frontend && npx playwright test
+
+echo "--- Cleaning up test data ---"
+cd .. # Go back to root if playwright test changed directory
+./venv/bin/python manage.py cleanup_test_data
+
+echo "--- Stopping background servers ---"
+kill $BACKEND_PID $FRONTEND_PID || true # Use || true to prevent script from exiting if a PID is already dead
+
+echo "--- E2E tests completed successfully ---"
+```
+
+**如何使用**: 在專案根目錄下執行 `./run_e2e_local.sh`。
+
+### 2. 檢查服務狀態
+
+*   **確認伺服器是否運行**: 使用 `curl -I http://localhost:5173` 和 `curl -I http://localhost:8000/api/doctors/` 檢查前端和後端服務是否正常響應。
+*   **檢查 `wait-on` 配置**: 確保 `wait-on` 指令中的 URL 正確，特別是後端 API 的路徑。
+
+### 3. 分析錯誤日誌
+
+*   **Playwright 測試報告**: 執行 `npx playwright show-report` 查看詳細的測試報告，了解具體的失敗步驟、截圖和錯誤訊息。
+*   **瀏覽器控制台**: 在 Playwright 測試執行期間，檢查瀏覽器的開發者工具控制台，尋找前端相關的錯誤或警告。
+*   **後端伺服器日誌**: 檢查後端 Django 伺服器的控制台輸出，尋找任何 API 處理錯誤、資料庫相關問題或伺服器啟動異常。即使是 `Broken pipe` 等看似無害的訊息，若頻繁出現或在關鍵操作時發生，也可能暗示潛在問題。
+*   **前端開發伺服器日誌**: 檢查前端 Vite 伺服器的控制台輸出，尋找編譯或運行時錯誤。
+
+### 4. 逐步偵錯
+
+*   **使用 `page.pause()`**: 在 Playwright 測試程式碼中，可以在關鍵步驟前加入 `await page.pause()`，讓測試暫停並打開瀏覽器，方便手動檢查頁面狀態。
+*   **增加 `console.log()`**: 在測試程式碼中加入 `console.log()` 輸出變數值或執行流程，幫助追蹤問題。
+
 ---
 
 ## 部署 (Deployment)

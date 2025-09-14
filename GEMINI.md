@@ -368,4 +368,80 @@ kill $FRONTEND_PID
 2.  **前端 API 位址寫死**: 
     - **現象**: 即使映像檔建置成功，手動測試和 E2E 測試的註冊功能依然失敗，但 `curl` 指令卻能成功。
     - **根源**: 您提供了瀏覽器的「Request Headers」，我們發現前端 `apiService.js` 中的 `baseURL` 被寫死為 `http://127.0.0.1:8000/api`。這導致瀏覽器直接嘗試連接後端容器（但該連接埠未對外暴露），而不是透過 Nginx 的 80 連接埠代理。
-    - **解決方案**: 將 `baseURL` 修改為相對路徑 `/api`，讓所有請求都先經過 Nginx。�。
+    - **解決方案**: 將 `baseURL` 修改為相對路徑 `/api`，讓所有請求都先經過 Nginx。
+
+## 2025-09-15: E2E 測試不穩定性偵錯與解決
+
+### 1. 問題描述
+
+在執行 `npm run test:e2e` 指令時，E2E 測試（特別是 `global.setup.js` 中的使用者註冊流程）會因 `TimeoutError: page.waitForURL: Timeout 30000ms exceeded.` 而失敗。這表示在註冊表單提交後，頁面未能成功跳轉到 `/login`。
+
+### 2. 偵錯過程與分析
+
+1.  **初步判斷**: 根據 `GEMINI.md` 中「方法一：快速本地測試 (npm 指令)」的說明，此方法因並行啟動前後端伺服器，可能存在不穩定性。
+2.  **檢查 `global.setup.js`**: 發現測試在註冊後會等待頁面跳轉至 `**/login`。若後端服務未及時響應或前端重定向失敗，便會導致超時。
+3.  **驗證服務狀態**:
+    *   嘗試使用 `curl -I http://localhost:5173` 檢查前端服務，回應 `200 OK`，表示前端正常運行。
+    *   嘗試使用 `curl -I http://localhost:8000` 檢查後端服務，回應 `404 Not Found`。這本身是預期行為，因為根路徑沒有對應的視圖。
+    *   意識到 `wait-on` 應該檢查一個實際存在的 API 端點，例如 `http://localhost:8000/api/doctors/`，而不是後端根目錄。
+4.  **採用穩定測試策略**: 決定放棄不穩定的並行啟動方式，改用 `GEMINI.md` 中「方法二：高穩定性測試 (CI/CD 或手動)」所描述的循序執行流程。
+
+### 3. 解決方案
+
+採用以下循序執行步驟，成功解決了 E2E 測試的不穩定問題：
+
+1.  **植入測試資料**: 執行 `./venv/bin/python manage.py seed_test_doctor`。
+2.  **背景啟動後端伺服器**: 執行 `(./venv/bin/python manage.py migrate --no-input && ./venv/bin/python manage.py runserver) &`。
+3.  **背景啟動前端伺服器**: 執行 `(cd frontend && npm run dev) &`。
+4.  **等待服務就緒**: 執行 `npx wait-on http://localhost:5173 http://localhost:8000/api/doctors/`，確保前後端服務及後端特定 API 端點均可訪問。
+5.  **執行 Playwright 測試**: 執行 `cd frontend && npx playwright test`。
+6.  **清理測試資料**: 執行 `./venv/bin/python manage.py cleanup_test_data`。
+7.  **終止背景進程**: 根據啟動時記錄的 PID，使用 `kill <PID1> <PID2> ...` 終止前後端伺服器進程。
+
+#### 整合式本地 E2E 測試腳本 (`run_e2e_local.sh`)
+
+為了方便本地開發和偵錯，我們將上述循序執行步驟整合為一個 Shell Script。您可以在專案根目錄下執行 `./run_e2e_local.sh` 來運行 E2E 測試。
+
+```bash
+#!/bin/bash
+
+# Exit immediately if a command exits with a non-zero status.
+set -e
+
+echo "--- Seeding test data ---"
+./venv/bin/python manage.py seed_test_doctor
+
+echo "--- Starting backend server in background ---"
+(./venv/bin/python manage.py migrate --no-input && ./venv/bin/python manage.py runserver) &
+BACKEND_PID=$!
+echo "Backend PIDs: $BACKEND_PID"
+
+echo "--- Starting frontend server in background ---"
+(cd frontend && npm run dev) &
+FRONTEND_PID=$!
+echo "Frontend PIDs: $FRONTEND_PID"
+
+echo "--- Waiting for services to be ready ---"
+npx wait-on http://localhost:5173 http://localhost:8000/api/doctors/
+
+echo "--- Running Playwright E2E tests ---"
+cd frontend && npx playwright test
+
+echo "--- Cleaning up test data ---"
+cd .. # Go back to root if playwright test changed directory
+./venv/bin/python manage.py cleanup_test_data
+
+echo "--- Stopping background servers ---"
+kill $BACKEND_PID $FRONTEND_PID || true # Use || true to prevent script from exiting if a PID is already dead
+
+echo "--- E2E tests completed successfully ---"
+```
+
+### 4. 結論與未來偵錯建議
+
+*   **優先使用穩定策略**: 在開發和偵錯 E2E 測試時，應優先採用「高穩定性測試 (CI/CD 或手動)」的循序執行流程，以避免因服務啟動時序問題導致的假性失敗。
+*   **檢查服務狀態**: 若 E2E 測試失敗，首先應確認前後端服務是否已成功啟動並可訪問。可使用 `curl` 指令檢查關鍵 URL (例如 `http://localhost:5173` 和 `http://localhost:8000/api/doctors/`)。
+*   **分析 Playwright 報告**: 仔細查看 Playwright 產生的測試報告，了解具體的失敗步驟和錯誤訊息。
+*   **檢查伺服器日誌**: 監控後端 Django 伺服器和前端 Vite 伺服器的控制台輸出，尋找任何錯誤或警告訊息。特別是 Django 日誌，應留意任何與 API 請求處理、資料庫互動或伺服器啟動相關的錯誤。即使是 `Broken pipe` 等看似無害的訊息，若頻繁出現或在關鍵操作時發生，也可能暗示潛在問題。
+*   **逐步偵錯**: 若問題複雜，可考慮在 Playwright 測試中加入 `page.pause()` 或 `console.log()`，逐步追蹤執行流程和變數狀態。
+�。

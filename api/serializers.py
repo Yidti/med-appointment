@@ -3,8 +3,6 @@ from .models import Patient, Doctor, Schedule, Appointment
 from django.contrib.auth import authenticate
 
 class PatientSerializer(serializers.ModelSerializer):
-    # The frontend sends 'name', and we make it write-only.
-    first_name = serializers.CharField(write_only=True)
     password = serializers.CharField(write_only=True)
 
     class Meta:
@@ -15,18 +13,17 @@ class PatientSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         """
-        Use Django's `create_user` method to handle password hashing.
-        We use the email as the username, as specified in the Patient model's USERNAME_FIELD.
-        The 'name' from the frontend is used for 'first_name'.
+        Create a new patient without using create_user to avoid username issues.
+        Password is set manually using set_password to ensure hashing.
         """
-        user = Patient.objects.create_user(
-            username=validated_data['email'],  # Use email for the username field
+        user = Patient.objects.create(
             email=validated_data['email'],
-            password=validated_data['password'],
-            first_name=validated_data.get('first_name', ''),  # Use first_name
+            first_name=validated_data.get('first_name', ''),
             phone=validated_data.get('phone'),
             birthday=validated_data.get('birthday')
         )
+        user.set_password(validated_data['password'])
+        user.save()
         return user
 
 class EmailAuthTokenSerializer(serializers.Serializer):

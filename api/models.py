@@ -2,6 +2,9 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 
 class Patient(AbstractUser):
+    # By setting username to None, we are effectively removing it, 
+    # relying solely on the email as the unique identifier.
+    username = None
     # Django's AbstractUser already has: username, first_name, last_name, email, password, is_staff, is_active, date_joined
     # We will use email as the primary identifier, so let's make it unique and required.
     email = models.EmailField(unique=True)
