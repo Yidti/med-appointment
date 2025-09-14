@@ -70,6 +70,7 @@ class DoctorListView(generics.ListAPIView):
     """
     queryset = Doctor.objects.all()
     serializer_class = DoctorSerializer
+    permission_classes = [AllowAny]
 
 
 class DoctorDetailView(generics.RetrieveAPIView):
@@ -78,6 +79,7 @@ class DoctorDetailView(generics.RetrieveAPIView):
     """
     queryset = Doctor.objects.all()
     serializer_class = DoctorSerializer
+    permission_classes = [AllowAny]
 
 
 from django.utils import timezone
@@ -88,6 +90,7 @@ class ScheduleListView(generics.ListAPIView):
     If no date is provided, returns all future available schedules for the doctor.
     """
     serializer_class = ScheduleSerializer
+    permission_classes = [AllowAny]
 
     def get_queryset(self):
         """

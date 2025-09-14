@@ -139,8 +139,9 @@ cython_debug/
 temp.md
 error-context.md
 registration_error.log
-.DS_Storefrontend/storageState.json
+.DS_Store
+frontend/storageState.json
 
 # Environment variables
 .env
-.DS_Store.DS_Store
+.DS_Store
