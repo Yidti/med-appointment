@@ -169,6 +169,51 @@ echo "--- E2E tests completed successfully ---"
 
 ---
 
+## 部署偵錯指南 (Deployment Debugging Guide)
+
+在 GCP 上部署應用程式時，可能會遇到各種問題。以下是常見問題及其解決方案的總結：
+
+### 1. 80 埠被佔用 (`address already in use`)
+
+*   **現象**：執行 `sudo docker compose up -d --build` 時，Nginx 容器因 80 埠被佔用而無法啟動。
+*   **原因**：GCP VM 上預先安裝的 Nginx 或其他服務佔用了 80 埠。
+*   **解決方案**：停止並禁用主機上的 Nginx 服務。
+    ```bash
+    sudo systemctl stop nginx
+    sudo systemctl disable nginx
+    ```
+
+### 2. 網站無法訪問 / `/swagger` 500 錯誤
+
+*   **現象**：瀏覽器無法訪問網站，或 `/swagger` 頁面顯示 `500 Internal Server Error`。
+*   **檢查步驟**：
+    1.  **GCP 防火牆**：確認 GCP 防火牆規則允許來自 `0.0.0.0/0` 的 TCP 80 埠入站流量。
+    2.  **Nginx 容器日誌**：檢查 Nginx 容器日誌 (`sudo docker compose logs nginx`)，尋找 `502 Bad Gateway` 或 `connect() failed` 等錯誤。
+    3.  **後端容器日誌**：檢查後端容器日誌 (`sudo docker compose logs backend`)，尋找應用程式啟動或運行時的錯誤。
+    4.  **Nginx 配置**：確認 `nginx/nginx.conf` 中的代理規則正確，特別是 `/api/`、`/swagger/` 和 `/redoc/` 等路徑。
+        *   **常見問題**：`location /` 區塊過於通用，導致與後端路徑衝突，產生重定向循環。
+        *   **解決方案**：將更具體的代理規則 (如 `/swagger/`, `/redoc/`, `/api/`, `/admin/`) 放在 `location /` 之前。
+    5.  **Django `settings.py`**：
+        *   **`CORS_ALLOWED_ORIGINS`**：確保 `CORS_ALLOWED_ORIGINS` 包含您 GCP VM 的外部 IP 位址。建議從環境變數動態載入。
+        *   **`ALLOWED_HOSTS`**：確保 `ALLOWED_HOSTS` 包含 `*` 或您 GCP VM 的外部 IP 位址。
+        *   **`DEBUG` 模式**：在偵錯時，可以暫時將 `DEBUG = True` 設定在 `settings.py` 中，以獲取詳細的錯誤追溯頁面。
+
+### 3. 首頁 `403 Forbidden` 或空白頁面
+
+*   **現象**：訪問首頁時顯示 `403 Forbidden` 或空白頁面。
+*   **檢查步驟**：
+    1.  **Node.js 和 npm 安裝**：確認 GCP VM 上已安裝 Node.js 和 npm。
+        *   **解決方案**：如果未安裝，請安裝 (`sudo apt install nodejs npm`)。
+    2.  **Node.js 版本**：確認 Node.js 版本符合前端框架 (如 Vite) 的要求。
+        *   **解決方案**：如果版本過舊，請升級 Node.js。
+    3.  **前端建置**：確認前端專案已成功建置。
+        *   **解決方案**：進入 `frontend` 目錄，執行 `npm install` 和 `npm run build`。
+    4.  **權限問題**：建置前端時可能遇到 `EACCES: permission denied` 錯誤。
+        *   **解決方案**：修正 `frontend` 目錄的權限 (`sudo chown -R <your_user>:<your_user> /home/<your_user>/med-appointment/frontend`)。
+    5.  **Docker Compose 重建**：每次修改前端程式碼或 Nginx 配置後，務必執行 `sudo docker compose down` 和 `sudo docker compose up -d --build` 來重建並重啟服務。
+
+---
+
 ## API 文件 (API Documentation)
 
 當應用程式啟動後，您可以透過 `http://localhost/swagger/` 或 `http://localhost/redoc/` 存取 API 文件。

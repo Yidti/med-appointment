@@ -444,4 +444,41 @@ echo "--- E2E tests completed successfully ---"
 *   **分析 Playwright 報告**: 仔細查看 Playwright 產生的測試報告，了解具體的失敗步驟和錯誤訊息。
 *   **檢查伺服器日誌**: 監控後端 Django 伺服器和前端 Vite 伺服器的控制台輸出，尋找任何錯誤或警告訊息。特別是 Django 日誌，應留意任何與 API 請求處理、資料庫互動或伺服器啟動相關的錯誤。即使是 `Broken pipe` 等看似無害的訊息，若頻繁出現或在關鍵操作時發生，也可能暗示潛在問題。
 *   **逐步偵錯**: 若問題複雜，可考慮在 Playwright 測試中加入 `page.pause()` 或 `console.log()`，逐步追蹤執行流程和變數狀態。
+
+## 2025-09-15: GCP 部署偵錯與解決
+
+### 1. 問題描述
+
+在 GCP Compute Engine VM 上部署應用程式時，遇到多個問題，導致網站無法訪問，或 `/swagger` 頁面出現 `500 Internal Server Error`，首頁出現 `403 Forbidden`。
+
+### 2. 偵錯過程與分析
+
+1.  **80 埠被佔用**：
+    *   **現象**：執行 `sudo docker compose up -d --build` 時，Nginx 容器因 80 埠被佔用而無法啟動 (`address already in use`)。
+    *   **原因**：GCP VM 上預先安裝的 Nginx 服務佔用了 80 埠。
+    *   **解決方案**：停止並禁用主機上的 Nginx 服務 (`sudo systemctl stop nginx`, `sudo systemctl disable nginx`)。
+2.  **網站無法顯示 / `/swagger` 500 錯誤 (階段一)**：
+    *   **現象**：`sudo docker compose logs med_appointment_backend` 失敗，提示 `no such service: med_appointment_backend`。
+    *   **原因**：`docker compose logs` 指令需要的是 `docker-compose.yml` 中定義的服務名稱 (`backend`)，而非容器名稱。
+    *   **解決方案**：修正指令為 `sudo docker compose logs backend`。
+3.  **網站無法顯示 / `/swagger` 500 錯誤 (階段二)**：
+    *   **現象**：網站仍無法訪問，`/swagger` 頁面出現 `500 Internal Server Error`。
+    *   **原因 1 (CORS)**：`med_appointment/settings.py` 中的 `CORS_ALLOWED_ORIGINS` 是硬編碼的，未包含 GCP VM 的外部 IP。
+    *   **解決方案 1**：修改 `settings.py`，使其從 `.env` 環境變數中動態載入 `CORS_ALLOWED_ORIGINS`。
+    *   **原因 2 (Nginx 重定向循環)**：`nginx/nginx.conf` 中的 `location /` 區塊導致 `/swagger` 和 `/redoc` 請求產生重定向循環。
+    *   **解決方案 2**：修改 `nginx/nginx.conf`，將 `/swagger/` 和 `/redoc/` 的代理規則放在更通用的 `location /` 區塊之前。
+    *   **原因 3 (Nginx 502 Bad Gateway)**：Nginx 日誌顯示 `connect() failed (111: Connection refused)`，表示無法連線到後端。
+    *   **解決方案 3**：上述 Nginx 配置和 CORS 修正後，後端已能正常響應，此問題隨之解決。
+4.  **首頁 `403 Forbidden`**：
+    *   **現象**：首頁無法訪問，顯示 `403 Forbidden`。
+    *   **原因 1 (npm 未安裝)**：GCP VM 上未安裝 Node.js 和 npm。
+    *   **解決方案 1**：安裝 Node.js 和 npm (`sudo apt install nodejs npm`)。
+    *   **原因 2 (Node.js 版本過舊)**：已安裝的 Node.js 版本 (18.x) 過舊，不符合 Vite 要求 (20.x+)。
+    *   **解決方案 2**：升級 Node.js 到 20.x 版本。
+    *   **原因 3 (權限不足)**：執行 `npm run build` 時出現 `EACCES: permission denied`。
+    *   **解決方案 3**：修正 `frontend` 目錄的權限 (`sudo chown -R bonjour_luc:bonjour_luc /home/bonjour_luc/med-appointment/frontend`)。
+
+### 3. 結論
+
+經過一系列偵錯，所有問題均已解決，應用程式已成功部署並可正常訪問。主要問題點集中在環境配置 (Node.js 版本、權限)、Nginx 代理配置以及 Django 應用程式的環境變數讀取。
 �。
