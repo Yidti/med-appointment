@@ -145,3 +145,4 @@ frontend/storageState.json
 # Environment variables
 .env
 .DS_Store
+.env.gcp
